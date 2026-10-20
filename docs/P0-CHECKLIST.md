@@ -19,12 +19,12 @@ Measured by the agent on 2026-10-20, Windows 11, Chrome and Edge headless, serve
 
 1. https://vercel.com, "Continue with GitHub", **Hobby** plan. If anything asks for a payment method, stop (spec rule: no card, ever).
 2. Add New > Project > import `Aditya-tec/anomaly-zoo` (the repo is private; that is fine on Hobby).
-3. **Root Directory: `spike`.** Framework preset: Next.js. The install and build commands and the output directory come from `spike/vercel.json` (`npm ci --ignore-scripts`, `npm run build`, `out`); confirm the dashboard shows them.
+3. **Root Directory: `spike`.** Framework preset: Next.js. The install and build commands come from `spike/vercel.json` (`npm ci --ignore-scripts`, `npm run build`); confirm the dashboard shows them. Leave **Output Directory** at its default (do not set it to `out`): for Next.js, Vercel's builder reads that setting as Next's `distDir` (`.next`) and finds the static export in `out/` by itself through `.next/export-detail.json`.
 4. Project Settings > General: make sure **"Include source files outside of the Root Directory in the Build Step"** is ON. The spike build reads `web/public/engine`, `scenarios/` and `engine/testdata` from the repo root, and `prepare.mjs` fails with a clear message if they are missing.
 5. Add **no** environment variables. Do **not** enable Web Analytics or Speed Insights.
 6. Deploy. For a preview, push a branch (for example `p0-spike`) and open the Vercel preview URL from the commit status or PR.
 
-If step 4 is not available on your plan, the fallback is Root Directory = repository root with Build Command `cd spike && npm ci --ignore-scripts && npm run build` and Output Directory `spike/out`, moving `spike/vercel.json` to the repository root. Tell the agent and it will adjust.
+If step 4 is not available on your plan, the fallback is a plain static deployment from the repository root: Root Directory = repository root, Framework Preset **Other**, Install Command `npm ci --ignore-scripts --prefix spike`, Build Command `npm run build --prefix spike`, Output Directory `spike/out`, and move `spike/vercel.json` to the repository root with `"framework": null` and without `installCommand`/`buildCommand`. (With the Next.js preset the output directory means Next's `distDir`, so `out` only works with the Other preset.) Tell the agent and it will adjust.
 
 ## AC0.2: worker instantiates the WASM under the headers, zero CSP violations, three browsers
 
