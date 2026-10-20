@@ -100,3 +100,94 @@ jobs:
           go test -count=1 -v ./... | tee "$RUNNER_TEMP/conformance.txt"
           grep -q -- '--- PASS: TestPostgresSelect1' "$RUNNER_TEMP/conformance.txt"
           grep -i 'server_version' "$RUNNER_TEMP/conformance.txt"
+
+  web:
+    name: web
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install (lockfile only, no install scripts)
+        run: npm ci --ignore-scripts
+
+      - name: Lint (includes the no-hard-coded-outcome and no-innerHTML rules)
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Build (static export, per-page CSP injection and verification, no-engine check)
+        run: npm run build
+
+      - name: Size budgets
+        run: npm run size
+
+      - name: Dependency audit (production, high and above)
+        run: npm audit --omit=dev --audit-level=high
+
+  e2e:
+    name: e2e
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install
+        run: npm ci --ignore-scripts
+
+      - name: Build
+        run: npm run build
+
+      - name: Install Chromium, Firefox and WebKit
+        run: npx playwright install --with-deps chromium firefox webkit
+
+      - name: Playwright (journeys, keyboard-only, axe, responsive, CSP) in three browsers
+        run: npx playwright test
+
+      - name: Lighthouse (mobile profile; performance, accessibility, best practices, SEO budgets)
+        run: npm run lighthouse
+
+      - name: Deployed-URL checker against the local server with the real headers
+        run: |
+          node scripts/serve.mjs 4173 &
+          sleep 3
+          node scripts/check-deployed.mjs http://127.0.0.1:4173
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: failure()
+        with:
+          name: web-e2e-diagnostics
+          path: |
+            web/playwright-report
+            web/test-results
+          retention-days: 7

@@ -4,6 +4,7 @@
 // precedence for overlapping rules is not something to depend on.
 //   node scripts/serve.mjs [port]
 import { createServer } from "node:http";
+import { brotliCompressSync, constants as zc, gzipSync } from "node:zlib";
 import { readFileSync, existsSync, statSync } from "node:fs";
 import { dirname, extname, join, normalize, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -41,6 +42,21 @@ function resolveFile(path) {
   return existsSync(f) && statSync(f).isFile() ? f : null;
 }
 
+// Like Vercel, compress text responses (brotli, else gzip) so local measurements
+// (Lighthouse, size checks) reflect what visitors actually download.
+const COMPRESSIBLE = /^(text\/|application\/(json|javascript|xml)|image\/svg)/;
+const cache = new Map();
+function encode(body, type, acceptEncoding, key) {
+  if (!COMPRESSIBLE.test(type) || body.length < 512) return { body, encoding: null };
+  const enc = /\bbr\b/.test(acceptEncoding) ? "br" : /\bgzip\b/.test(acceptEncoding) ? "gzip" : null;
+  if (!enc) return { body, encoding: null };
+  const k = `${enc}:${key}`;
+  if (!cache.has(k)) {
+    cache.set(k, enc === "br" ? brotliCompressSync(body, { params: { [zc.BROTLI_PARAM_QUALITY]: 5 } }) : gzipSync(body, { level: 6 }));
+  }
+  return { body: cache.get(k), encoding: enc };
+}
+
 createServer((req, res) => {
   try {
     const path = new URL(req.url, "http://localhost").pathname;
@@ -57,8 +73,11 @@ createServer((req, res) => {
       return res.end("not found");
     }
     if (!headers["Content-Type"]) headers["Content-Type"] = MIME[extname(file)] || "application/octet-stream";
+    const raw = readFileSync(file);
+    const { body, encoding } = encode(raw, String(headers["Content-Type"]), String(req.headers["accept-encoding"] || ""), file);
+    if (encoding) { headers["Content-Encoding"] = encoding; headers["Vary"] = "Accept-Encoding"; }
     res.writeHead(200, headers);
-    res.end(readFileSync(file));
+    res.end(body);
   } catch (e) {
     res.writeHead(500, { "Content-Type": "text/plain" });
     res.end(String(e));

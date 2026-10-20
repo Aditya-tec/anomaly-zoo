@@ -4,14 +4,15 @@ Watch database isolation bugs happen, then turn them off.
 
 Anomaly Zoo is a from-scratch transactional engine (multi-version concurrency control, written in Go with only the standard library) that runs scripted two- and three-transaction schedules at four isolation levels: Read Uncommitted, Read Committed, Snapshot Isolation and Serializable. You step through a schedule, see a bug happen (a dirty read, a lost update, write skew), switch the level, replay, and see the mechanism that prevents it.
 
-> **Status: engine only.** The engine, command line, WASM build and tests exist. The website (habitat map, step-through pages, playground) is **not built yet**, and there is **no PostgreSQL comparison yet**. See [Status](#status).
+> **Status: engine and static website.** The engine, command line, WASM build, and a static website (habitat map, step-through pages for eight anomalies, About) exist. The in-browser **playground is not built yet**, and there is **no PostgreSQL comparison yet**. See [Status](#status).
 
 ## What exists today
 
 - `engine/`: DSL parser, MVCC store, transaction manager (write locks, deadlock detection, first-updater-wins), a simplified Serializable Snapshot Isolation tracker, a serializability oracle, and a trace format with a JSON Schema.
 - `scenarios/`: eight scenarios (dirty read, non-repeatable read, phantom, lost update, read skew, write skew, read-only anomaly, deadlock) and `expected.json`, the result matrix the engine is checked against.
 - `cmd/azoo`: `run`, `matrix`, `traces`, `gen`, `version`.
-- `web/public/engine`: the engine compiled to WebAssembly, a worker and a client (no website around them yet).
+- `web/public/engine`: the engine compiled to WebAssembly, a worker and a client (the P6 pages do not load them; the playground in P7 will).
+- `web/`: the website, a static Next.js export that replays the engine's pre-generated traces (no engine runs in the browser on these pages). Tests: unit, Playwright in Chromium/Firefox/WebKit, axe, Lighthouse.
 - `spike/`: a throwaway Next.js page used to prove that the worker, the WASM and a strict Content-Security-Policy work together on a static host. It is not the site.
 
 ## Try it
@@ -48,7 +49,7 @@ Please read these before relying on anything here.
 4. **The Serializable level is "SSI-lite".** Predicate locks are key-prefix only, there is no read-only optimisation and nothing is summarised or evicted, so it can abort more transactions than a production database would. Passing random schedules against an oracle is evidence, not a proof of correctness.
 5. **No claim is made about any real database yet.** Comparison with PostgreSQL is planned (phase P8) and not done. Nothing here describes MySQL, Oracle or SQL Server.
 6. The WASM file is large: 1.43 MB gzip (about 1.04 MB brotli), mostly because Go's `encoding/json` pulls in `reflect`.
-7. Browser support is unverified beyond Chrome and Edge on Windows (spike only).
+7. Browser testing is automated (Playwright's Chromium, Firefox and WebKit, plus Chrome and Edge for the spike). Safari on macOS, real phones and a human screen-reader pass have not been tested.
 
 Your own database's documentation is the authority on how it behaves.
 
@@ -58,7 +59,8 @@ Your own database's documentation is the authority on how it behaves.
 |---|---|
 | P1 DSL, P2-P4 engine (RU, RC, SI, SER), P5 CLI/traces/WASM | done, tests recorded in docs/PROGRESS.md |
 | P0 hosting spike (Vercel preview, CSP in three browsers, CI) | files written; hosted checks pending, see docs/P0-CHECKLIST.md |
-| P6-P7 website and playground | not started |
+| P6 website: habitat map, anomaly pages, About | built and tested locally; Vercel deployment and CI results pending |
+| P7 playground | not started |
 | P8 PostgreSQL comparison | not started |
 | P9-P10 hardening and launch | not started |
 

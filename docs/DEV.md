@@ -22,3 +22,20 @@
 | Fuzz parser | `go test ./engine/dsl -run '^$' -fuzz FuzzParse -fuzztime 5m` |
 
 Line endings are LF everywhere (`.gitattributes`); digests depend on it.
+
+## Website (`web/`)
+
+Run from `web/` after `npm ci --ignore-scripts`:
+
+| Task | Command |
+|---|---|
+| Lint (includes the no-hard-coded-outcome and no-innerHTML rules) | `npm run lint` |
+| Typecheck | `npm run typecheck` |
+| Unit tests | `npm test` |
+| Build (static export to `out/`, CSP injection + verification, no-engine check) | `npm run build` |
+| Size budgets | `npm run size` |
+| Serve `out/` with the real headers and compression | `npm run serve` (port 4173) |
+| e2e + axe in Chromium, Firefox, WebKit (first time: `npx playwright install chromium firefox webkit`) | `npm run e2e` |
+| Lighthouse (mobile; set `CHROME_PATH` if Chrome is not found) | `npm run lighthouse` |
+| Check a running or deployed URL (CSP + headers on every page) | `node scripts/check-deployed.mjs https://<host>` |
+| Refresh the traces the site reads | `go run ./cmd/azoo traces --out web/public/traces` (a Go test fails if they are stale) |

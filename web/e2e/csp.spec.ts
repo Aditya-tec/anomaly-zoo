@@ -38,3 +38,34 @@ test("every page carries a CSP <meta> before its first script, and the response 
   }
   void page;
 });
+
+// Negative control: the policy is really enforced in this browser. An inline
+// script without a hash must not run, and the browser must report the violation.
+test("the CSP is enforced: an unhashed inline script is blocked and reported", async ({ page }) => {
+  await page.addInitScript(() => {
+    (window as unknown as { __csp: string[] }).__csp = [];
+    document.addEventListener("securitypolicyviolation", (e) => {
+      (window as unknown as { __csp: string[] }).__csp.push(e.violatedDirective);
+    });
+  });
+  await page.goto("/");
+  const ran = await page.evaluate(() => {
+    const s = document.createElement("script");
+    s.textContent = "window.__injected = true";
+    document.head.appendChild(s);
+    return (window as unknown as { __injected?: boolean }).__injected === true;
+  });
+  expect(ran).toBe(false);
+  await expect.poll(() => page.evaluate(() => (window as unknown as { __csp: string[] }).__csp.length)).toBeGreaterThan(0);
+  expect(await page.evaluate(() => (window as unknown as { __csp: string[] }).__csp[0])).toMatch(/script-src/);
+
+  // Same for an inline event handler and for a javascript: URL.
+  const handler = await page.evaluate(() => {
+    const b = document.createElement("button");
+    b.setAttribute("onclick", "window.__handler = true");
+    document.body.appendChild(b);
+    b.click();
+    return (window as unknown as { __handler?: boolean }).__handler === true;
+  });
+  expect(handler).toBe(false);
+});
