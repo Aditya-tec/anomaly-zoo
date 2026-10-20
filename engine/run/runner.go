@@ -213,7 +213,10 @@ func (r *runner) push(ev trace.Event, t *txn.Txn) {
 	if t != nil {
 		ev.SnapshotTS = t.SnapshotTS
 	}
-	ev.StoreAfter = r.m.Store.Snapshot()
+	ev.StoreAfter = r.m.Store.SnapshotKeys(r.m.Store.TakeDirty())
+	if ev.Index%trace.FullSnapshotEvery == 0 {
+		ev.StoreFull = r.m.Store.Snapshot()
+	}
 	r.events = append(r.events, ev)
 }
 

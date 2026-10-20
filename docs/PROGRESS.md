@@ -31,5 +31,20 @@ Toolchain: go1.27.0 windows/amd64.
 - [x] AC4.3 Mutation checks (TestMutationChecks): rules 1, 2, 3 caught by random/canned and shrunk to 8 steps; commit-time check and after-commit re-check are redundant for serializability so they are caught by targeted tests, see DECISIONS.md
 - [x] AC4.4 Oracle unit tests: write skew, read-only anomaly, lost update rejected; serial, empty, delete/absent accepted; shrinker test
 
-## P5–P10
-See spec §12.
+## P4 follow-ups (owner conditions, 2026-10-20)
+- [x] Unsampled check: schema validation + digest recomputation + second-run stability on EVERY schedule for 2,000 seeds x 4 levels (`TestEverySchedulePassesSchemaAndDigest`)
+- [x] All five mutations switchable (`ssi.Faults`); both defense-in-depth rules fail a targeted test when switched off (`TestMutationChecks`)
+- [x] 200,000-schedule SER campaign with the commit-time check disabled (seeds 1,000,000-1,199,999, 403 s): **0 non-serializable histories**
+- [x] 200,000-schedule SER campaign with the after-commit re-check disabled (same seeds, 403 s): **0 non-serializable histories**. Both results support the claim that each rule is redundant for serializability; they do not show the rules are useless (the after-commit re-check changes *when* a doomed transaction aborts)
+
+## P5 — CLI, traces, WASM
+- [x] AC5.1 `azoo matrix scenarios --check` passes ("OK: 8 scenarios x 4 levels"); every trace < 20 KB (largest 5.3 KB); matrix.json 3,090 B (< 10 KB); manifest.json 11,300 B
+- [x] AC5.2 Native and WASM digests identical for all 32 canned traces under Node v22.16.0 (`node scripts/wasm-digest-check.mjs`: "DIGESTS EQUAL: 32/32"), plus 400/400 on 100 random schedules x 4 levels; the check was shown to fail (exit 1) on a tampered digest
+- [x] AC5.3 `worker.js` returns structured `{ok:false, errors:[{line,col,message}]}` for invalid source, oversize source, bad level, and rejects unknown methods; `client.mjs` rejects after 2000 ms, terminates the worker and spawns a fresh one for the next call (stub that never answers; measured wait 2.0 s); after load the worker has no `fetch`/`XMLHttpRequest`/`WebSocket`/`EventSource`/`importScripts` and only ever requested its three own files
+- [x] AC5.4 `TestBuildIsReproducible`: two builds, the second with an empty GOCACHE, identical SHA-256 `7ffc34bf...a9f6`; `go run ./tools/buildwasm -verify` reproduces the committed hash
+- WASM size (real engine): raw 5,170,206 B, gzip 1,428,460 B. Under the 1.5 MB gate, OVER the 1.0 MB target; see DECISIONS.md
+- Worst-case trace: 3,341,036 B with full per-event store, 288,091 B after the delta change (limit 1 MiB)
+- Lint: `gofmt -l` clean, `go vet ./...` clean, staticcheck v0.8.2 clean, `go test -race -short ./...` passes (gcc present). Full `go test ./...` (20,000 schedules per level) passes. NOT run: govulncheck, CI, Playwright
+
+## P6–P10
+See spec §12. P6 does not start until AC0.2-AC0.6 are done by the owner.

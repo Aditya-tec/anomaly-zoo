@@ -7,6 +7,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"sort"
 )
 
 const (
@@ -137,6 +138,7 @@ type Event struct {
 	Reads          []Read        `json:"reads"`
 	Effects        []Effect      `json:"effects"`
 	StoreAfter     []KeyVersions `json:"storeAfter"`
+	StoreFull      []KeyVersions `json:"storeFull,omitempty"`
 	Note           *string       `json:"note"`
 }
 
@@ -207,6 +209,9 @@ func encode(v any) ([]byte, error) {
 	return bytes.TrimRight(buf.Bytes(), "\n"), nil
 }
 
+// CanonicalJSON returns the canonical JSON (sorted keys, compact) of any value.
+func CanonicalJSON(v any) ([]byte, error) { return encode(v) }
+
 // Canonical returns the canonical JSON of t exactly as it stands (including
 // its digest field if set).
 func Canonical(t *Trace) ([]byte, error) { return encode(t) }
@@ -242,4 +247,47 @@ func (t *Trace) Marshal() ([]byte, error) {
 		}
 	}
 	return Canonical(t)
+}
+
+// FullSnapshotEvery is the period (in events) of the full-store snapshots
+// stored in Event.StoreFull. All other events carry only the keys they changed
+// in Event.StoreAfter (an empty version list means the key was removed).
+const FullSnapshotEvery = 32
+
+// Replayer rebuilds the store state event by event from a trace.
+type Replayer struct {
+	chains map[string][]VersionJSON
+}
+
+// NewReplayer starts from the trace's setup data (all committed by T0 at 1).
+func NewReplayer(t *Trace) *Replayer {
+	r := &Replayer{chains: map[string][]VersionJSON{}}
+	for _, kv := range t.Setup {
+		r.chains[kv.Key] = []VersionJSON{{Writer: "T0", Value: kv.Value, CommitTS: 1}}
+	}
+	return r
+}
+
+// Apply folds in the changes of one event.
+func (r *Replayer) Apply(e *Event) {
+	for _, kv := range e.StoreAfter {
+		if len(kv.Versions) == 0 {
+			delete(r.chains, kv.Key)
+		} else {
+			r.chains[kv.Key] = kv.Versions
+		}
+	}
+}
+
+// Chain returns the current chain of key.
+func (r *Replayer) Chain(key string) []VersionJSON { return r.chains[key] }
+
+// Keys returns the keys that currently have a chain.
+func (r *Replayer) Keys() []string {
+	out := make([]string, 0, len(r.chains))
+	for k := range r.chains {
+		out = append(out, k)
+	}
+	sort.Strings(out)
+	return out
 }

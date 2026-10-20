@@ -82,6 +82,7 @@ func New(level trace.Level, setup []dsl.SetupPut) *Manager {
 		m.Store.AppendUncommitted(p.Key, mvcc.Version{Writer: "T0", Value: p.Value})
 		m.Store.Stamp(p.Key, "T0", 1)
 	}
+	m.Store.TakeDirty() // setup is in trace.setup, not in the first event's delta
 	return m
 }
 

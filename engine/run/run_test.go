@@ -192,9 +192,7 @@ func TestWriteSkewSERWalkthrough(t *testing.T) {
 	tr := mustRun(t, load(t, "write-skew"), trace.SER)
 	var all []string
 	for _, e := range tr.Steps {
-		for _, x := range edges(&e) {
-			all = append(all, x)
-		}
+		all = append(all, edges(&e)...)
 	}
 	if len(all) != 2 || all[0] != "T2->T1@doctor:" || all[1] != "T1->T2@doctor:" {
 		t.Fatalf("edges %v", all)

@@ -77,6 +77,28 @@
       "required": ["key", "value"],
       "properties": { "key": { "type": "string" }, "value": { "type": "integer" } }
     },
+    "keyVersions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key", "versions"],
+      "properties": {
+        "key": { "type": "string" },
+        "versions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["writer", "value", "deleted", "commitTS"],
+            "properties": {
+              "writer": { "type": "string" },
+              "value": { "type": "integer" },
+              "deleted": { "type": "boolean" },
+              "commitTS": { "type": "integer", "minimum": 0 }
+            }
+          }
+        }
+      }
+    },
     "event": {
       "type": "object",
       "additionalProperties": false,
@@ -160,31 +182,8 @@
             }
           }
         },
-        "storeAfter": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "additionalProperties": false,
-            "required": ["key", "versions"],
-            "properties": {
-              "key": { "type": "string" },
-              "versions": {
-                "type": "array",
-                "items": {
-                  "type": "object",
-                  "additionalProperties": false,
-                  "required": ["writer", "value", "deleted", "commitTS"],
-                  "properties": {
-                    "writer": { "type": "string" },
-                    "value": { "type": "integer" },
-                    "deleted": { "type": "boolean" },
-                    "commitTS": { "type": "integer", "minimum": 0 }
-                  }
-                }
-              }
-            }
-          }
-        },
+        "storeAfter": { "type": "array", "items": { "$ref": "#/$defs/keyVersions" } },
+        "storeFull": { "type": "array", "items": { "$ref": "#/$defs/keyVersions" } },
         "note": { "type": ["string", "null"] }
       }
     }
