@@ -4,9 +4,9 @@ Toolchain: go1.27.0 windows/amd64.
 
 ## P0 — Spike and gates
 - [x] AC0.1 WASM hello builds; gzip 586,004 B (limit 1.5 MB) — see DECISIONS.md
-- [ ] AC0.2 Worker instantiates WASM on Vercel preview, zero CSP violations (3 browsers) — owner. Files ready (spike/, docs/P0-CHECKLIST.md). Local evidence only: Chrome + Edge PASS against the same headers, Firefox/WebKit/Vercel not run
-- [ ] AC0.3 Next static export per-page meta CSP works — owner. Local: build + verify-csp OK (3 pages, 9 hashes), inline script hashes independently recomputed, negative control blocked; deployed page not checked
-- [ ] AC0.4 `engine.json` no-cache, hashed engine files immutable — owner. Local: verified against serve.mjs with spike/vercel.json (headers, no overlapping rules); Vercel not checked
+- [ ] AC0.2 Worker instantiates WASM on Vercel preview, zero CSP violations (3 browsers) — owner. Files ready (spike/, docs/P0-CHECKLIST.md). Evidence on https://anomaly-zoo.vercel.app (commit c41ffe6, 2026-10-20): headless Chrome and Edge PASS (status OK, digests equal, 0 CSP violations, 0 console errors/failed requests, page and worker consoles). NOT yet run: Firefox, WebKit/Safari. Owner ticks this once all three engines pass
+- [ ] AC0.3 Next static export per-page meta CSP works — owner. Local: build + verify-csp OK (3 pages, 9 hashes), inline script hashes independently recomputed, negative control blocked; Deployed: `node spike/scripts/check-deployed.mjs` PASS on the live URL (meta CSP present before the first script, 3/3 inline scripts hashed, no unsafe-inline/eval; the 404 page also has it). An earlier deployment through the Next.js preset had NO meta (fixed, see DECISIONS.md). Owner to confirm and tick
+- [ ] AC0.4 `engine.json` no-cache, hashed engine files immutable — owner. Local: verified against serve.mjs with spike/vercel.json (headers, no overlapping rules); Deployed: all header checks PASS on the live URL via check-deployed.mjs (engine.json no-cache, hashed WASM immutable + application/wasm, worker CSP on every /engine file, one CSP header per response). HSTS on .vercel.app: max-age=63072000; includeSubDomains; preload (added by Vercel, not by us). Owner to confirm and tick
 - [ ] AC0.5 CI Postgres service container `SELECT 1` — owner. Workflow + conformance/ test written; the test compiles, vets and skips without a database. NOT run against Postgres (Docker daemon was not running; CI never run)
 - [ ] AC0.6 Free-tier terms re-verified and dated — owner
 
