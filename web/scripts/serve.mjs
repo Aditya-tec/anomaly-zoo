@@ -36,7 +36,7 @@ function resolveFile(path) {
   const rel = normalize(decodeURIComponent(path)).replace(/^[\\/]+/, "");
   let f = join(out, rel);
   if (!f.startsWith(out + sep) && f !== out) return null;
-  if (existsSync(f) && statSync(f).isDirectory()) f = join(f, "index.html");
+  if (existsSync(f) && statSync(f).isDirectory()) f = existsSync(join(f, "index.html")) ? join(f, "index.html") : f + ".html";
   else if (!existsSync(f) && existsSync(f + ".html")) f += ".html";
   return existsSync(f) && statSync(f).isFile() ? f : null;
 }
@@ -47,7 +47,15 @@ createServer((req, res) => {
     const file = resolveFile(path);
     const headers = {};
     for (const [k, v] of headersFor(path)) headers[k] = v;
-    if (!file) {\n      const nf = join(out, "404.html");\n      if (existsSync(nf)) { res.writeHead(404, { ...headers, "Content-Type": "text/html; charset=utf-8" }); return res.end(readFileSync(nf)); }\n      res.writeHead(404, { ...headers, "Content-Type": "text/plain" });\n      return res.end("not found");\n    }
+    if (!file) {
+      const nf = join(out, "404.html");
+      if (existsSync(nf)) {
+        res.writeHead(404, { ...headers, "Content-Type": "text/html; charset=utf-8" });
+        return res.end(readFileSync(nf));
+      }
+      res.writeHead(404, { ...headers, "Content-Type": "text/plain" });
+      return res.end("not found");
+    }
     if (!headers["Content-Type"]) headers["Content-Type"] = MIME[extname(file)] || "application/octet-stream";
     res.writeHead(200, headers);
     res.end(readFileSync(file));

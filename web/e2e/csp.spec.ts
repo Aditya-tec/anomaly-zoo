@@ -1,0 +1,40 @@
+import { expect, test } from "@playwright/test";
+import { ROUTES, expectClean, watchPage } from "./helpers";
+
+// Fails on any console error or CSP violation, on every route, in every browser.
+test("no console errors or CSP violations on any route", async ({ page }) => {
+  const w = await watchPage(page);
+  for (const route of ROUTES) {
+    await page.goto(route);
+    await page.waitForLoadState("networkidle");
+  }
+  await expectClean(page, w);
+});
+
+test("no console errors or CSP violations while using the viewer", async ({ page }) => {
+  const w = await watchPage(page);
+  await page.goto("/anomalies/lost-update?level=RC");
+  await expect(page.getByTestId("viewer")).toHaveAttribute("data-ready", "true");
+  for (let i = 0; i < 9; i++) await page.getByRole("button", { name: "Next" }).click();
+  await page.locator('label:has([data-testid="level-SER"])').click();
+  await page.getByRole("button", { name: "Play" }).click();
+  await page.getByRole("button", { name: "Pause" }).click();
+  await page.getByRole("button", { name: "Collapse" }).click();
+  await page.getByTestId("theme-toggle").click();
+  await page.keyboard.press("r");
+  await expectClean(page, w);
+});
+
+test("every page carries a CSP <meta> before its first script, and the response headers are in place", async ({ page, request }) => {
+  for (const route of ROUTES) {
+    const res = await request.get(route);
+    const html = await res.text();
+    const meta = html.indexOf('http-equiv="Content-Security-Policy"');
+    expect(meta, `${route}: CSP meta missing`).toBeGreaterThan(0);
+    expect(meta, `${route}: CSP meta after first script`).toBeLessThan(html.search(/<script\b/i));
+    expect(res.headers()["content-security-policy"]).toContain("frame-ancestors 'none'");
+    expect(res.headers()["x-content-type-options"]).toBe("nosniff");
+    expect(html).not.toMatch(/https?:\/\/(?!anomaly-zoo\.vercel\.app|github\.com|127\.0\.0\.1|localhost|www\.w3\.org)[a-z0-9.-]+\.[a-z]{2,}/i);
+  }
+  void page;
+});

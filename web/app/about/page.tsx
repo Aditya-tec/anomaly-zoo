@@ -1,0 +1,114 @@
+import type { Metadata } from "next";
+import { loadEngineInfo } from "@/lib/data";
+import { SHOW_CONFORMANCE_SECTION } from "@/lib/site";
+import { LEVELS, LEVEL_DEFINITIONS, LEVEL_NAMES } from "@/lib/levels";
+
+export const metadata: Metadata = {
+  title: "About",
+  description: "How Anomaly Zoo works, what it can and cannot tell you, and what it does not collect.",
+  alternates: { canonical: "/about" },
+};
+
+// Limits, from spec §13.3. Item 3 and item 4 are reworded to drop statements
+// about PostgreSQL that are not yet verified; see docs/COPY-TODO.md.
+const LIMITS: readonly string[] = [
+  "A key–integer model with prefix scans; no SQL, indexes, or durability.",
+  "A deterministic single-threaded simulation of interleavings, not real concurrency.",
+  "Read Uncommitted is included for teaching, to show dirty reads.",
+  "The Serializable level is a simplified version: it uses prefix-level predicate locks and has no read-only optimization, so it can abort more transactions than a production database would.",
+  "Vendor behaviors differ; this explains concepts and does not replace your database's documentation.",
+];
+
+export default function AboutPage() {
+  const engine = loadEngineInfo();
+  return (
+    <main id="main" tabIndex={-1} className="mx-auto max-w-3xl px-4 py-8 sm:px-6">
+      <h1 className="m-0 text-4xl font-bold">About Anomaly Zoo</h1>
+
+      <section aria-labelledby="method-h" className="mt-8">
+        <h2 id="method-h" className="m-0 mb-2 text-2xl font-semibold">
+          Methodology
+        </h2>
+        <p>Anomaly Zoo is a from-scratch MVCC engine written in Go using only the standard library. It runs scripted schedules of two or three transactions at four isolation levels and records every step as a trace.</p>
+        <p>The habitat map is computed by running the engine and is asserted against expected results in continuous integration. These pages replay those recorded traces; the engine itself does not run in your browser here.</p>
+        <h3 className="mt-6 mb-2 text-lg font-semibold">The four levels</h3>
+        <dl className="m-0 space-y-3">
+          {LEVELS.map((lv) => (
+            <div key={lv}>
+              <dt className="font-semibold">
+                {LEVEL_NAMES[lv]} <span className="mono text-muted">({lv})</span>
+              </dt>
+              <dd className="m-0">{LEVEL_DEFINITIONS[lv]}</dd>
+            </div>
+          ))}
+        </dl>
+      </section>
+
+      <section id="limits" aria-labelledby="limits-h" className="mt-10 scroll-mt-4">
+        <h2 id="limits-h" className="m-0 mb-2 text-2xl font-semibold">
+          Limits
+        </h2>
+        <ol className="m-0 list-decimal space-y-2 pl-6">
+          {LIMITS.map((l) => (
+            <li key={l}>{l}</li>
+          ))}
+        </ol>
+      </section>
+
+      {SHOW_CONFORMANCE_SECTION ? (
+        <section aria-labelledby="conf-h" className="mt-10">
+          <h2 id="conf-h" className="m-0 mb-2 text-2xl font-semibold">
+            Comparison with a real database
+          </h2>
+          <p>Reserved for the conformance report (phase P8).</p>
+        </section>
+      ) : null}
+
+      <section aria-labelledby="faq-h" className="mt-10">
+        <h2 id="faq-h" className="m-0 mb-2 text-2xl font-semibold">
+          FAQ
+        </h2>
+        <h3 className="mt-4 mb-1 text-lg font-semibold">Does this behave exactly like my database?</h3>
+        <p className="m-0">Vendor behaviors differ; this explains concepts and does not replace your database&apos;s documentation. Check your own database&apos;s documentation: behavior differs between vendors and versions.</p>
+        <h3 className="mt-4 mb-1 text-lg font-semibold">Why is Read Uncommitted included?</h3>
+        <p className="m-0">{LEVEL_DEFINITIONS.RU}</p>
+        <h3 className="mt-4 mb-1 text-lg font-semibold">Why can Serializable abort a transaction?</h3>
+        <p className="m-0">{LEVEL_DEFINITIONS.SER}</p>
+      </section>
+
+      <section aria-labelledby="privacy-h" className="mt-10">
+        <h2 id="privacy-h" className="m-0 mb-2 text-2xl font-semibold">
+          Privacy
+        </h2>
+        <p className="m-0">
+          No cookies, no analytics, no third-party requests, no fingerprinting. If you use the theme button, your choice is kept in your browser&apos;s local storage; nothing is sent anywhere.
+        </p>
+      </section>
+
+      <section aria-labelledby="verify-h" className="mt-10">
+        <h2 id="verify-h" className="m-0 mb-2 text-2xl font-semibold">
+          Verify the engine build
+        </h2>
+        <p className="mt-0">
+          The committed WebAssembly build of the engine ({engine.engineVersion}, built with {engine.goVersion}) has this SHA-256. Rebuilding it from source with the pinned Go toolchain gives the same hash.
+        </p>
+        <p className="mono m-0 break-all text-sm" data-testid="wasm-hash">
+          {engine.wasmSha256}
+        </p>
+      </section>
+
+      <section aria-labelledby="links-h" className="mt-10">
+        <h2 id="links-h" className="m-0 mb-2 text-2xl font-semibold">
+          Links
+        </h2>
+        <ul className="m-0 list-disc pl-6">
+          <li>
+            <a href="https://github.com/Aditya-tec/anomaly-zoo" className="inline-flex min-h-11 items-center" rel="noopener noreferrer">
+              Source code on GitHub
+            </a>
+          </li>
+        </ul>
+      </section>
+    </main>
+  );
+}
