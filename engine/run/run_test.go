@@ -14,7 +14,7 @@ import (
 var update = flag.Bool("update", false, "rewrite golden traces")
 
 // goldenLevels grows with the phases: RU,RC at P2, SI at P3, SER at P4.
-var goldenLevels = []trace.Level{trace.RU, trace.RC, trace.SI}
+var goldenLevels = []trace.Level{trace.RU, trace.RC, trace.SI, trace.SER}
 
 func load(t *testing.T, id string) *dsl.Scenario {
 	t.Helper()
@@ -176,6 +176,87 @@ func TestSIHidesNewerAndUncommitted(t *testing.T) {
 		t.Fatalf("%+v", second.Reads)
 	}
 	_ = e
+}
+
+func edges(e *trace.Event) []string {
+	var out []string
+	for _, f := range e.Effects {
+		if f.Kind == trace.EffRWEdge {
+			out = append(out, f.From+"->"+f.To+"@"+f.Via)
+		}
+	}
+	return out
+}
+
+func TestWriteSkewSERWalkthrough(t *testing.T) {
+	tr := mustRun(t, load(t, "write-skew"), trace.SER)
+	var all []string
+	for _, e := range tr.Steps {
+		for _, x := range edges(&e) {
+			all = append(all, x)
+		}
+	}
+	if len(all) != 2 || all[0] != "T2->T1@doctor:" || all[1] != "T1->T2@doctor:" {
+		t.Fatalf("edges %v", all)
+	}
+	// T1's PUT adds T2->T1, T2's PUT adds T1->T2.
+	if got := edges(find(tr, "T1", "PUT", false)); len(got) != 1 || got[0] != "T2->T1@doctor:" {
+		t.Fatalf("T1 PUT edges %v", got)
+	}
+	c1 := find(tr, "T1", "COMMIT", false)
+	if c1.Status != trace.StOK || tr.Txns[0].CommitTS != 2 {
+		t.Fatalf("T1 COMMIT %+v", c1)
+	}
+	doomed := false
+	for _, f := range c1.Effects {
+		if f.Kind == trace.EffDoomed && f.Txn == "T2" {
+			doomed = true
+		}
+	}
+	if !doomed {
+		t.Fatal("T1's commit should doom T2")
+	}
+	c2 := find(tr, "T2", "COMMIT", false)
+	if c2.Status != trace.StAborted || c2.Reason != trace.AbortDependencies {
+		t.Fatalf("T2 COMMIT %+v", c2)
+	}
+	if tr.Invariants[0].Status != "holds" || !tr.Serializable.Verdict {
+		t.Fatalf("%+v %+v", tr.Invariants, tr.Serializable)
+	}
+}
+
+func TestReadOnlyAnomalySERWalkthrough(t *testing.T) {
+	tr := mustRun(t, load(t, "read-only-anomaly"), trace.SER)
+	commit := map[string]uint64{}
+	for _, x := range tr.Txns {
+		commit[x.ID] = x.CommitTS
+	}
+	if commit["T3"] != 2 || commit["T1"] != 3 || commit["T2"] != 0 {
+		t.Fatalf("commit clocks %v", commit)
+	}
+	put := find(tr, "T2", "PUT", false)
+	if put.Status != trace.StAborted || put.Reason != trace.AbortDependencies || put.Args.Key != "receipt:1:r1" {
+		t.Fatalf("T2 PUT %+v", put)
+	}
+	if got := edges(put); len(got) != 1 || got[0] != "T1->T2@receipt:1:" {
+		t.Fatalf("T2 PUT edges %v", got)
+	}
+	if got := edges(find(tr, "T3", "PUT", false)); len(got) != 1 || got[0] != "T2->T3@control:batch" {
+		t.Fatalf("T3 PUT edges %v", got)
+	}
+	if c := find(tr, "T2", "COMMIT", false); c.Status != trace.StSkipped {
+		t.Fatalf("T2 COMMIT %s", c.Status)
+	}
+	if tr.Invariants[0].Status != "holds" {
+		t.Fatalf("%+v", tr.Invariants[0])
+	}
+}
+
+func TestDeadlockAndLostUpdateSER(t *testing.T) {
+	tr := mustRun(t, load(t, "lost-update"), trace.SER)
+	if r := find(tr, "T2", "PUT", true); r.Reason != trace.AbortConcurrentUpdate {
+		t.Fatalf("%+v", r)
+	}
 }
 
 func TestDirtyReadRU(t *testing.T) {

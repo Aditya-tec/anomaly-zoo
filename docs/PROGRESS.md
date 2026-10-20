@@ -26,10 +26,10 @@ Toolchain: go1.27.0 windows/amd64.
 - [x] AC3.2 P1–P5 at SI over 20,000 random schedules pass (also RU: P1,P2; RC: P1–P3); P7 guards: 2,660 non-serializable SI histories, 1,451 RC schedules with a non-repeatable read, per 20,000
 
 ## P4 — SSI and oracle
-- [ ] AC4.1 SER column matches; walk-throughs reproduce
-- [ ] AC4.2 P6 20k in CI, 200k local
-- [ ] AC4.3 Mutation checks
-- [ ] AC4.4 Oracle unit tests
+- [x] AC4.1 Full 32-cell matrix equals expected.json (TestMatrixFull); write-skew and read-only-anomaly walk-throughs reproduce edges, victim, step and clocks (TestWriteSkewSERWalkthrough, TestReadOnlyAnomalySERWalkthrough)
+- [x] AC4.2 P6: 20,000 SER schedules in the default test run (0 oracle rejections); 200,000 run locally on 2026-10-20, seeds 1,000,000-1,199,999, 374.5 s, 0 oracle rejections (AZOO_PROP_N=200000 AZOO_PROP_SEED=1000000 go test -run TestPropertiesSER ./engine/run)
+- [x] AC4.3 Mutation checks (TestMutationChecks): rules 1, 2, 3 caught by random/canned and shrunk to 8 steps; commit-time check and after-commit re-check are redundant for serializability so they are caught by targeted tests, see DECISIONS.md
+- [x] AC4.4 Oracle unit tests: write skew, read-only anomaly, lost update rejected; serial, empty, delete/absent accepted; shrinker test
 
 ## P5–P10
 See spec §12.

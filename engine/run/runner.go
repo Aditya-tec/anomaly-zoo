@@ -8,6 +8,7 @@ import (
 
 	"github.com/Aditya-tec/anomaly-zoo/engine/dsl"
 	"github.com/Aditya-tec/anomaly-zoo/engine/oracle"
+	"github.com/Aditya-tec/anomaly-zoo/engine/ssi"
 	"github.com/Aditya-tec/anomaly-zoo/engine/trace"
 	"github.com/Aditya-tec/anomaly-zoo/engine/txn"
 )
@@ -45,6 +46,9 @@ func Exec(sc *dsl.Scenario, level trace.Level) (*trace.Trace, *txn.Manager, erro
 		return nil, nil, fmt.Errorf("unknown level %q", level)
 	}
 	r := &runner{sc: sc, level: level, m: txn.New(level, sc.Setup), txns: map[string]*txnRun{}}
+	if level == trace.SER {
+		r.m.SSI = ssi.New()
+	}
 	for i, st := range sc.Steps {
 		r.schedule(st, i)
 	}

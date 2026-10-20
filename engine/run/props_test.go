@@ -9,7 +9,6 @@ import (
 
 	"github.com/Aditya-tec/anomaly-zoo/engine/dsl"
 	"github.com/Aditya-tec/anomaly-zoo/engine/gen"
-	"github.com/Aditya-tec/anomaly-zoo/engine/mvcc"
 	"github.com/Aditya-tec/anomaly-zoo/engine/trace"
 	"github.com/Aditya-tec/anomaly-zoo/engine/txn"
 )
@@ -321,4 +320,7 @@ func TestPropertiesSI(t *testing.T) {
 	t.Logf("SI: %d non-serializable histories", nonSer)
 }
 
-var _ = mvcc.NewStore
+func TestPropertiesSER(t *testing.T) {
+	nonSer, _ := runProperties(t, trace.SER, propN())
+	t.Logf("SER: %d non-serializable histories (must be 0)", nonSer)
+}
