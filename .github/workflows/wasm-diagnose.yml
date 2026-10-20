@@ -5,6 +5,10 @@ name: wasm-diagnose
 # compared with the committed one. It does not touch the expected hash.
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/wasm-diagnose.yml
 
 permissions: {}
 
