@@ -98,6 +98,10 @@ func (m *Manager) LockHolder(key string) (string, bool) {
 	return h, ok
 }
 
+// Held reports how many write locks and wait-for edges exist (both are 0 once
+// every transaction has ended).
+func (m *Manager) Held() (locks, waits int) { return len(m.locks), len(m.waitFor) }
+
 // WaitingOn returns the holder t is waiting for, if any.
 func (m *Manager) WaitingOn(id string) (string, bool) {
 	h, ok := m.waitFor[id]
@@ -224,6 +228,13 @@ func (m *Manager) Put(t *Txn, key string, value int64, deleted, resumed bool) Re
 		acq.Reason = trace.LockGrantedAfterWait
 	}
 	res.Effects = append(res.Effects, acq)
+	// First-updater-wins (spec §4.6): the lock is held, so no newer committed
+	// version can appear later; abort if one already exists past the snapshot.
+	if m.Level == trace.SI || m.Level == trace.SER {
+		if nc, ok := m.Store.NewestCommitted(key); ok && nc.CommitTS > t.SnapshotTS {
+			return m.abortResult(t, res, trace.AbortConcurrentUpdate)
+		}
+	}
 	m.Store.AppendUncommitted(key, mvcc.Version{Writer: t.ID, Value: value, Deleted: deleted})
 	res.Effects = append(res.Effects, versionEffect(t.ID, key, value, deleted))
 	return res

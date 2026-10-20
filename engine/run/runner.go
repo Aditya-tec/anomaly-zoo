@@ -34,15 +34,23 @@ type runner struct {
 
 // Run executes sc at level and returns the sealed trace.
 func Run(sc *dsl.Scenario, level trace.Level) (*trace.Trace, error) {
+	t, _, err := Exec(sc, level)
+	return t, err
+}
+
+// Exec is Run that also returns the final manager state, for invariant
+// checks in tests.
+func Exec(sc *dsl.Scenario, level trace.Level) (*trace.Trace, *txn.Manager, error) {
 	if !level.Valid() {
-		return nil, fmt.Errorf("unknown level %q", level)
+		return nil, nil, fmt.Errorf("unknown level %q", level)
 	}
 	r := &runner{sc: sc, level: level, m: txn.New(level, sc.Setup), txns: map[string]*txnRun{}}
 	for i, st := range sc.Steps {
 		r.schedule(st, i)
 	}
 	r.finish()
-	return r.build()
+	t, err := r.build()
+	return t, r.m, err
 }
 
 func (r *runner) schedule(st dsl.Step, sched int) {

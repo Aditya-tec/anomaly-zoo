@@ -14,7 +14,7 @@ import (
 var update = flag.Bool("update", false, "rewrite golden traces")
 
 // goldenLevels grows with the phases: RU,RC at P2, SI at P3, SER at P4.
-var goldenLevels = []trace.Level{trace.RU, trace.RC}
+var goldenLevels = []trace.Level{trace.RU, trace.RC, trace.SI}
 
 func load(t *testing.T, id string) *dsl.Scenario {
 	t.Helper()
@@ -90,6 +90,92 @@ func TestLostUpdateRC(t *testing.T) {
 	if tr.Invariants[0].Status != "violated" {
 		t.Fatalf("invariant %+v", tr.Invariants[0])
 	}
+}
+
+func TestLostUpdateSI(t *testing.T) {
+	tr := mustRun(t, load(t, "lost-update"), trace.SI)
+	if v, _ := final(tr, "balance"); v != 150 {
+		t.Fatalf("final = %d, want 150", v)
+	}
+	blocked := find(tr, "T2", "PUT", false)
+	resumed := find(tr, "T2", "PUT", true)
+	if blocked.Status != trace.StBlocked || resumed.Status != trace.StAborted || resumed.Reason != trace.AbortConcurrentUpdate {
+		t.Fatalf("blocked=%+v resumed=%+v", blocked, resumed)
+	}
+	if resumed.SnapshotTS != 1 || tr.Txns[0].CommitTS != 2 {
+		t.Fatalf("snapshot %d, T1 commitTS %d", resumed.SnapshotTS, tr.Txns[0].CommitTS)
+	}
+	if c := find(tr, "T2", "COMMIT", false); c.Status != trace.StSkipped {
+		t.Fatalf("T2 COMMIT = %s", c.Status)
+	}
+	if tr.Invariants[0].Status != "holds" {
+		t.Fatalf("%+v", tr.Invariants[0])
+	}
+}
+
+func TestFirstUpdaterWinsWithoutWaiting(t *testing.T) {
+	// T1 commits before T2 ever asks for the lock, so the abort is immediate.
+	sc := parse(t, `scenario f
+setup:
+  PUT x = 1
+schedule:
+  T1 BEGIN
+  T2 BEGIN
+  T2 READ x AS a
+  T1 PUT x = 2
+  T1 COMMIT
+  T2 PUT x = 3
+  T2 COMMIT
+`)
+	tr := mustRun(t, sc, trace.SI)
+	e := find(tr, "T2", "PUT", false)
+	if e.Status != trace.StAborted || e.Reason != trace.AbortConcurrentUpdate || e.Resumed {
+		t.Fatalf("%+v", e)
+	}
+	if v, _ := final(tr, "x"); v != 2 {
+		t.Fatalf("x = %d", v)
+	}
+	// The same schedule at RC lets T2 overwrite.
+	if v, _ := final(mustRun(t, sc, trace.RC), "x"); v != 3 {
+		t.Fatalf("RC x = %d", v)
+	}
+}
+
+func TestSnapshotTakenAtFirstDataOperation(t *testing.T) {
+	// T1 BEGINs first but does not touch data until after T2 commits, so its
+	// snapshot already includes T2's write (snapshot is not taken at BEGIN).
+	sc := parse(t, `scenario s
+setup:
+  PUT x = 1
+schedule:
+  T1 BEGIN
+  T2 BEGIN
+  T2 PUT x = 2
+  T2 COMMIT
+  T1 READ x AS a
+  T1 COMMIT
+`)
+	tr := mustRun(t, sc, trace.SI)
+	e := find(tr, "T1", "READ", false)
+	if e.Result.(trace.ReadResult).Value != 2 || e.SnapshotTS != 2 {
+		t.Fatalf("%+v", e)
+	}
+	if b := find(tr, "T1", "BEGIN", false); b.SnapshotTS != 0 {
+		t.Fatalf("BEGIN must not take a snapshot: %+v", b)
+	}
+}
+
+func TestSIHidesNewerAndUncommitted(t *testing.T) {
+	tr := mustRun(t, load(t, "non-repeatable-read"), trace.SI)
+	e := find(tr, "T1", "READ", false)
+	second := tr.Steps[len(tr.Steps)-2]
+	if second.Op != "READ" || second.Result.(trace.ReadResult).Value != 100 {
+		t.Fatalf("%+v", second)
+	}
+	if len(second.Reads) != 2 || second.Reads[1].Why != trace.InvisibleNewerSnapshot {
+		t.Fatalf("%+v", second.Reads)
+	}
+	_ = e
 }
 
 func TestDirtyReadRU(t *testing.T) {

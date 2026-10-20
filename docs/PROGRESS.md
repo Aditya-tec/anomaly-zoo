@@ -22,8 +22,8 @@ Toolchain: go1.27.0 windows/amd64.
 - [x] AC2.4 Unit tests for visibility, lock handoff, FIFO wake + re-block, queued steps, drain re-block/abort, deadlock, blocked_at_end. Coverage of mvcc+txn+run combined 90.2 % (the uncovered code is the SI/SER hooks, added in P3/P4)
 
 ## P3 — Snapshot isolation
-- [ ] AC3.1 SI column matches
-- [ ] AC3.2 P1–P5 at SI, P7 guard
+- [x] AC3.1 SI column equals expected.json (TestMatrixSI); lost-update@SI aborts T2 with abort_concurrent_update at its resumed PUT, final = 150
+- [x] AC3.2 P1–P5 at SI over 20,000 random schedules pass (also RU: P1,P2; RC: P1–P3); P7 guards: 2,660 non-serializable SI histories, 1,451 RC schedules with a non-repeatable read, per 20,000
 
 ## P4 — SSI and oracle
 - [ ] AC4.1 SER column matches; walk-throughs reproduce

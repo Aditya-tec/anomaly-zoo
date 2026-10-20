@@ -24,3 +24,5 @@ func checkLevels(t *testing.T, levels []trace.Level) {
 }
 
 func TestMatrixRURC(t *testing.T) { checkLevels(t, []trace.Level{trace.RU, trace.RC}) }
+
+func TestMatrixSI(t *testing.T) { checkLevels(t, []trace.Level{trace.SI}) }
