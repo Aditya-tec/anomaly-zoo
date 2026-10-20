@@ -1,0 +1,101 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# No token permissions by default; each job opts in to exactly what it needs.
+permissions: {}
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  go:
+    name: go
+    runs-on: ubuntu-latest # standard 2-core runner; larger runners are billed even on public repos
+    timeout-minutes: 60
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod # honours the `toolchain` line
+          cache: false # the root module has no dependencies, hence no go.sum to key on
+
+      - name: gofmt
+        run: |
+          unformatted="$(gofmt -l .)"
+          if [ -n "$unformatted" ]; then
+            echo "These files need gofmt:"
+            echo "$unformatted"
+            exit 1
+          fi
+
+      - name: go vet
+        run: go vet ./...
+
+      - name: staticcheck
+        run: |
+          go install honnef.co/go/tools/cmd/staticcheck@v0.8.2
+          "$(go env GOPATH)/bin/staticcheck" ./...
+
+      # The engine is single-threaded by design, so -race mostly guards the
+      # tooling. -short keeps the property tests at 2,000 schedules under the
+      # race detector (about 10x slower); the full 20,000 run follows without it.
+      - name: go test -race -short
+        run: go test -race -short -count=1 ./...
+
+      - name: go test (full property runs, 20,000 schedules per level)
+        run: go test -count=1 ./...
+
+  conformance:
+    name: conformance
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      CONFORMANCE_DATABASE_URL: postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable
+      AZOO_REQUIRE_DB: "1" # a skipped DB test must fail this job
+    defaults:
+      run:
+        working-directory: conformance
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: conformance/go.mod
+          cache-dependency-path: conformance/go.sum
+
+      - name: go vet
+        run: go vet ./...
+
+      - name: AC0.5 - SELECT 1 against the postgres:16 service container
+        run: |
+          go test -count=1 -v ./... | tee "$RUNNER_TEMP/conformance.txt"
+          grep -q -- '--- PASS: TestPostgresSelect1' "$RUNNER_TEMP/conformance.txt"
+          grep -i 'server_version' "$RUNNER_TEMP/conformance.txt"

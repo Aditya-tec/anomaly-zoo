@@ -4,10 +4,10 @@ Toolchain: go1.27.0 windows/amd64.
 
 ## P0 — Spike and gates
 - [x] AC0.1 WASM hello builds; gzip 586,004 B (limit 1.5 MB) — see DECISIONS.md
-- [ ] AC0.2 Worker instantiates WASM on Vercel preview, zero CSP violations (3 browsers) — owner
-- [ ] AC0.3 Next static export per-page meta CSP works — owner
-- [ ] AC0.4 `engine.json` no-cache, hashed engine files immutable — owner
-- [ ] AC0.5 CI Postgres service container `SELECT 1` — owner
+- [ ] AC0.2 Worker instantiates WASM on Vercel preview, zero CSP violations (3 browsers) — owner. Files ready (spike/, docs/P0-CHECKLIST.md). Local evidence only: Chrome + Edge PASS against the same headers, Firefox/WebKit/Vercel not run
+- [ ] AC0.3 Next static export per-page meta CSP works — owner. Local: build + verify-csp OK (3 pages, 9 hashes), inline script hashes independently recomputed, negative control blocked; deployed page not checked
+- [ ] AC0.4 `engine.json` no-cache, hashed engine files immutable — owner. Local: verified against serve.mjs with spike/vercel.json (headers, no overlapping rules); Vercel not checked
+- [ ] AC0.5 CI Postgres service container `SELECT 1` — owner. Workflow + conformance/ test written; the test compiles, vets and skips without a database. NOT run against Postgres (Docker daemon was not running; CI never run)
 - [ ] AC0.6 Free-tier terms re-verified and dated — owner
 
 ## P1 — DSL
