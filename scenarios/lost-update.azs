@@ -1,0 +1,15 @@
+scenario lost-update
+title "Lost Update: two deposits, one survives"
+story "T1 and T2 both read a balance of 100, then each adds a deposit (+50 and +30). Both read before either writes."
+invariant "Every committed deposit is in the balance": final.val("balance") == 100 + 50 * committed(T1) + 30 * committed(T2)
+setup:
+  PUT balance = 100
+schedule:
+  T1 BEGIN
+  T2 BEGIN
+  T1 READ balance AS a
+  T2 READ balance AS b
+  T1 PUT balance = a + 50
+  T2 PUT balance = b + 30
+  T1 COMMIT
+  T2 COMMIT

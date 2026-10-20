@@ -1,0 +1,18 @@
+scenario write-skew
+title "Write Skew: the hospital with no doctor on call"
+story "A hospital needs at least one doctor on call. Alice and Bob are both on call. Each checks that the other is on call, then goes off call."
+invariant "At least one doctor stays on call": final.count("doctor:" WHERE == 1) >= 1
+setup:
+  PUT doctor:alice = 1
+  PUT doctor:bob = 1
+schedule:
+  T1 BEGIN
+  T2 BEGIN
+  T1 SCAN doctor: WHERE == 1 AS on_t1
+  T2 SCAN doctor: WHERE == 1 AS on_t2
+  T1 NOTE "Two are on call, so Alice can leave."
+  T2 NOTE "Two are on call, so Bob can leave."
+  T1 PUT doctor:alice = 0
+  T2 PUT doctor:bob = 0
+  T1 COMMIT
+  T2 COMMIT

@@ -1,0 +1,20 @@
+scenario read-only-anomaly
+title "Read-Only Anomaly: a report that can never be right"
+story "A shop closes the day's batch and prints a report. A receipt that started before the close gets filed into the already-reported batch."
+invariant "The printed report matches the batch's final total": sum(r) == final.sum("receipt:1:")
+setup:
+  PUT control:batch = 1
+schedule:
+  T2 BEGIN
+  T3 BEGIN
+  T2 READ control:batch AS current
+  T3 READ control:batch AS before_close
+  T3 PUT control:batch = before_close + 1
+  T3 COMMIT
+  T1 BEGIN
+  T1 READ control:batch AS day
+  T1 SCAN receipt:1: AS r
+  T1 NOTE "Batch 1 is closed; its report shows no receipts."
+  T1 COMMIT
+  T2 PUT receipt:1:r1 = 100
+  T2 COMMIT

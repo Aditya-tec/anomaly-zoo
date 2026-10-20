@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "cells": {
+    "dirty-read": {
+      "RU":  { "invariant": "violated", "serializable": false, "aborts": {}, "mechanism": "none" },
+      "RC":  { "invariant": "holds",    "serializable": true,  "aborts": {}, "mechanism": "visibility" },
+      "SI":  { "invariant": "holds",    "serializable": true,  "aborts": {}, "mechanism": "visibility" },
+      "SER": { "invariant": "holds",    "serializable": true,  "aborts": {}, "mechanism": "visibility" }
+    },
+    "non-repeatable-read": {
+      "RU":  { "invariant": "violated", "serializable": false, "aborts": {}, "mechanism": "none" },
+      "RC":  { "invariant": "violated", "serializable": false, "aborts": {}, "mechanism": "none" },
+      "SI":  { "invariant": "holds",    "serializable": true,  "aborts": {}, "mechanism": "visibility" },
+      "SER": { "invariant": "holds",    "serializable": true,  "aborts": {}, "mechanism": "visibility" }
+    },
+    "phantom": {
+      "RU":  { "invariant": "violated", "serializable": false, "aborts": {}, "mechanism": "none" },
+      "RC":  { "invariant": "violated", "serializable": false, "aborts": {}, "mechanism": "none" },
+      "SI":  { "invariant": "holds",    "serializable": true,  "aborts": {}, "mechanism": "visibility" },
+      "SER": { "invariant": "holds",    "serializable": true,  "aborts": {}, "mechanism": "visibility" }
+    },
+    "lost-update": {
+      "RU":  { "invariant": "violated", "serializable": false, "aborts": {}, "mechanism": "none" },
+      "RC":  { "invariant": "violated", "serializable": false, "aborts": {}, "mechanism": "none" },
+      "SI":  { "invariant": "holds",    "serializable": true,  "aborts": { "T2": "abort_concurrent_update" }, "mechanism": "abort_concurrent_update" },
+      "SER": { "invariant": "holds",    "serializable": true,  "aborts": { "T2": "abort_concurrent_update" }, "mechanism": "abort_concurrent_update" }
+    },
+    "read-skew": {
+      "RU":  { "invariant": "violated", "serializable": false, "aborts": {}, "mechanism": "none" },
+      "RC":  { "invariant": "violated", "serializable": false, "aborts": {}, "mechanism": "none" },
+      "SI":  { "invariant": "holds",    "serializable": true,  "aborts": {}, "mechanism": "visibility" },
+      "SER": { "invariant": "holds",    "serializable": true,  "aborts": {}, "mechanism": "visibility" }
+    },
+    "write-skew": {
+      "RU":  { "invariant": "violated", "serializable": false, "aborts": {}, "mechanism": "none" },
+      "RC":  { "invariant": "violated", "serializable": false, "aborts": {}, "mechanism": "none" },
+      "SI":  { "invariant": "violated", "serializable": false, "aborts": {}, "mechanism": "none" },
+      "SER": { "invariant": "holds",    "serializable": true,  "aborts": { "T2": "abort_dependencies" }, "mechanism": "abort_dependencies" }
+    },
+    "read-only-anomaly": {
+      "RU":  { "invariant": "violated", "serializable": false, "aborts": {}, "mechanism": "none" },
+      "RC":  { "invariant": "violated", "serializable": false, "aborts": {}, "mechanism": "none" },
+      "SI":  { "invariant": "violated", "serializable": false, "aborts": {}, "mechanism": "none" },
+      "SER": { "invariant": "holds",    "serializable": true,  "aborts": { "T2": "abort_dependencies" }, "mechanism": "abort_dependencies" }
+    },
+    "deadlock": {
+      "RU":  { "invariant": "violated", "serializable": true, "aborts": { "T2": "abort_deadlock" }, "mechanism": "abort_deadlock" },
+      "RC":  { "invariant": "violated", "serializable": true, "aborts": { "T2": "abort_deadlock" }, "mechanism": "abort_deadlock" },
+      "SI":  { "invariant": "violated", "serializable": true, "aborts": { "T2": "abort_deadlock" }, "mechanism": "abort_deadlock" },
+      "SER": { "invariant": "violated", "serializable": true, "aborts": { "T2": "abort_deadlock" }, "mechanism": "abort_deadlock" }
+    }
+  }
+}
