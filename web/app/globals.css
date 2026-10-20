@@ -238,7 +238,11 @@ a {
 }
 .segmented input:checked + .seg { background: var(--surface-2); border-color: var(--accent); box-shadow: inset 0 -3px 0 var(--accent); }
 .segmented input:focus-visible + .seg { outline: 3px solid var(--focus); outline-offset: 2px; }
+.segmented .seg { min-width: 0; }
+.segmented .tone-text { overflow-wrap: anywhere; }
 .segmented .seg-name { display: none; font-size: 0.8rem; color: var(--fg-muted); }
+/* Phones: a 2 x 2 grid, so wider fallback fonts (Linux, Android) never overflow a 70 px column. */
+@media (max-width: 639px) { .segmented { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (min-width: 640px) { .segmented .seg-name { display: block; } }
 
 /* ---------- viewer: banner ---------- */

@@ -32,7 +32,8 @@ for (const scheme of ["light", "dark"] as const) {
     await scan(page, `/404 (${scheme})`);
   });
   test(`axe: manual theme toggle matches the system theme (${scheme})`, async ({ page }) => {
-    await page.emulateMedia({ colorScheme: scheme === "light" ? "dark" : "light" }); // opposite of the toggle, to prove the toggle wins
+    // Reduced motion: no colour transitions, so axe never samples a half-faded colour after the toggle.
+    await page.emulateMedia({ colorScheme: scheme === "light" ? "dark" : "light", reducedMotion: "reduce" }); // opposite of the toggle, to prove the toggle wins
     await page.goto("/anomalies/write-skew");
     await expect(page.getByTestId("viewer")).toHaveAttribute("data-ready", "true");
     const toggle = page.getByTestId("theme-toggle");

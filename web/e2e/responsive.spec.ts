@@ -5,10 +5,29 @@ const WIDTHS = [320, 360, 375, 414, 640, 768, 1024, 1280, 1440];
 const PAGES = ["/", "/anomalies/read-only-anomaly?level=SER&step=8", "/anomalies/lost-update?level=RC&step=9", "/about"];
 
 async function noHorizontalScroll(page: Page, label: string) {
-  const m = await page.evaluate(() => ({ scroll: document.documentElement.scrollWidth, client: document.documentElement.clientWidth }));
-  expect(m.scroll, `${label}: horizontal overflow (${m.scroll} > ${m.client})`).toBeLessThanOrEqual(m.client + 1);
+  const m = await page.evaluate(() => {
+    const client = document.documentElement.clientWidth;
+    const scroll = document.documentElement.scrollWidth;
+    const offenders: string[] = [];
+    if (scroll > client + 1) {
+      // Name what sticks out: element boxes and text that overflows its own box.
+      for (const el of document.querySelectorAll("body *")) {
+        const r = el.getBoundingClientRect();
+        if (r.width > 0 && r.right > client + 0.5) offenders.push(`${el.tagName.toLowerCase()}.${String(el.className).split(" ").slice(0, 2).join(".")} right=${Math.round(r.right)}`);
+      }
+      const tw = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+      for (let n = tw.nextNode(); n; n = tw.nextNode()) {
+        if (!n.textContent?.trim()) continue;
+        const rg = document.createRange();
+        rg.selectNodeContents(n);
+        const r = rg.getBoundingClientRect();
+        if (r.right > client + 0.5) offenders.push(`text "${n.textContent.trim().slice(0, 20)}" in ${n.parentElement?.tagName.toLowerCase()}.${String(n.parentElement?.className).split(" ").slice(0, 2).join(".")} right=${Math.round(r.right)}`);
+      }
+    }
+    return { client, scroll, offenders: offenders.slice(0, 8) };
+  });
+  expect(m.scroll, `${label}: horizontal overflow (${m.scroll} > ${m.client}); sticking out: ${m.offenders.join(" | ")}`).toBeLessThanOrEqual(m.client + 1);
 }
-
 test("no horizontal scrolling from 320 px to 1440 px", async ({ page }) => {
   for (const width of WIDTHS) {
     await page.setViewportSize({ width, height: 800 });
