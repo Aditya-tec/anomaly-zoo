@@ -19,7 +19,7 @@ Measured by the agent on 2026-10-20, Windows 11, Chrome and Edge headless, serve
 
 1. https://vercel.com, "Continue with GitHub", **Hobby** plan. If anything asks for a payment method, stop (spec rule: no card, ever).
 2. Add New > Project > import `Aditya-tec/anomaly-zoo` (the repo is private; that is fine on Hobby).
-3. **Root Directory: `spike`.** Framework preset: Next.js. The install and build commands come from `spike/vercel.json` (`npm ci --ignore-scripts`, `npm run build`); confirm the dashboard shows them. Leave **Output Directory** at its default (do not set it to `out`; if the dashboard already shows `out` from the import, `spike/vercel.json` overrides it with `null` = auto-detect, but clearing the override in Settings > Build & Development is cleaner): for Next.js, Vercel's builder reads that setting as Next's `distDir` (`.next`) and finds the static export in `out/` by itself through `.next/export-detail.json`.
+3. **Root Directory: `spike`.** The settings come from `spike/vercel.json`, which overrides the dashboard: `framework: null` (plain static site), install `npm ci --ignore-scripts`, build `npm run build`, output directory `out`. Do **not** use the Next.js preset for the spike: Vercel's Next.js builder then serves its own prerendered files and silently drops the CSP `<meta>` that `scripts/inject-csp.mjs` writes into `out/*.html` (seen on 2026-10-20: no meta, different chunk paths `/_next/static/immutable/...`).
 4. Project Settings > General: make sure **"Include source files outside of the Root Directory in the Build Step"** is ON. The spike build reads `web/public/engine`, `scenarios/` and `engine/testdata` from the repo root, and `prepare.mjs` fails with a clear message if they are missing.
 5. Add **no** environment variables. Do **not** enable Web Analytics or Speed Insights.
 6. Deploy. For a preview, push a branch (for example `p0-spike`) and open the Vercel preview URL from the commit status or PR.
@@ -43,6 +43,8 @@ Fail: `status: ERROR` or `MISMATCH`, or any "Refused to ..." / "violates the fol
 2. Count the `<script>` tags that have no `src`: each one's SHA-256 (base64) must appear in `script-src`. The build already enforces this (`verify-csp`); the check here is that the **deployed** HTML is the same.
 3. `script-src` must not contain `'unsafe-inline'`, `'unsafe-eval'` or `'wasm-unsafe-eval'`.
 4. Visit `https://<host>/does-not-exist`: the 404 page must also carry a meta CSP and show no console errors.
+
+Shortcut that automates steps 1-3 and AC0.4 against any deployed URL: `cd spike; node scripts/check-deployed.mjs https://<host>` (add `--wait 240` right after a push to wait for the new deployment). It exits 1 on any failure.
 
 Pass: all four hold and AC0.2 passed. Fail: any inline script blocked in any browser. Then follow spec §10.3: switch the web app to a Vite static SPA and record why in `docs/DECISIONS.md`.
 
