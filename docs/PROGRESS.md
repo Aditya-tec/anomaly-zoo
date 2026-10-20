@@ -16,10 +16,10 @@ Toolchain: go1.27.0 windows/amd64.
 - [x] AC1.3 FuzzParse 5 min: 23,761,741 execs, 444 corpus entries, no failures. Seeds are the 8 scenarios + minimal, added with `f.Add` (no failing inputs exist, so `testdata/fuzz/` is empty)
 
 ## P2 — Engine core: RU and RC
-- [ ] AC2.1 Hand-verified traces
-- [ ] AC2.2 RU/RC matrix columns match
-- [ ] AC2.3 Traces schema-valid, digests stable
-- [ ] AC2.4 Unit tests; ≥ 85 % coverage
+- [x] AC2.1 Hand-verified traces: lost-update@RC final=130 (T2 blocked, resumed with lock_granted_after_wait); dirty-read@RU reads 2 (visible_dirty); deadlock aborts T2 and resumes T1's PUT b (all in engine/run/run_test.go)
+- [x] AC2.2 RU/RC matrix columns equal expected.json (engine/matrix TestMatrixRURC)
+- [x] AC2.3 All 16 RU/RC traces validate against trace.schema.json, two runs give identical bytes/digests, each < 20 KB (largest 6.4 KB); golden files in engine/testdata/golden
+- [x] AC2.4 Unit tests for visibility, lock handoff, FIFO wake + re-block, queued steps, drain re-block/abort, deadlock, blocked_at_end. Coverage of mvcc+txn+run combined 90.2 % (the uncovered code is the SI/SER hooks, added in P3/P4)
 
 ## P3 — Snapshot isolation
 - [ ] AC3.1 SI column matches

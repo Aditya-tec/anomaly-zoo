@@ -1,0 +1,192 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://anomaly-zoo.vercel.app/trace.schema.json",
+  "title": "Anomaly Zoo trace v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "engineVersion", "scenario", "level", "setup", "steps", "txns", "finalState", "invariants", "serializable", "digest"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "engineVersion": { "type": "string" },
+    "scenario": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "title", "story", "invariants"],
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "story": { "type": "string" },
+        "invariants": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name", "expr"],
+            "properties": { "name": { "type": "string" }, "expr": { "type": "string" } }
+          }
+        }
+      }
+    },
+    "level": { "enum": ["RU", "RC", "SI", "SER"] },
+    "setup": { "type": "array", "items": { "$ref": "#/$defs/kv" } },
+    "steps": { "type": "array", "items": { "$ref": "#/$defs/event" } },
+    "txns": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "status", "snapshotTS", "commitTS", "abortReason"],
+        "properties": {
+          "id": { "type": "string" },
+          "status": { "enum": ["committed", "aborted"] },
+          "snapshotTS": { "type": "integer", "minimum": 0 },
+          "commitTS": { "type": "integer", "minimum": 0 },
+          "abortReason": { "type": ["string", "null"] }
+        }
+      }
+    },
+    "finalState": { "type": "array", "items": { "$ref": "#/$defs/kv" } },
+    "invariants": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "status", "detail"],
+        "properties": {
+          "name": { "type": "string" },
+          "status": { "enum": ["holds", "violated", "n/a"] },
+          "detail": { "type": "string" }
+        }
+      }
+    },
+    "serializable": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["verdict", "witnessOrder"],
+      "properties": {
+        "verdict": { "type": "boolean" },
+        "witnessOrder": { "type": ["array", "null"], "items": { "type": "string" } }
+      }
+    },
+    "digest": { "type": "string" }
+  },
+  "$defs": {
+    "kv": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key", "value"],
+      "properties": { "key": { "type": "string" }, "value": { "type": "integer" } }
+    },
+    "event": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["index", "scheduledIndex", "resumed", "txn", "op", "args", "status", "snapshotTS", "stmtTS", "reads", "effects", "storeAfter", "note"],
+      "properties": {
+        "index": { "type": "integer", "minimum": 0 },
+        "scheduledIndex": { "type": "integer", "minimum": 0 },
+        "resumed": { "type": "boolean" },
+        "txn": { "type": "string" },
+        "op": { "enum": ["BEGIN", "COMMIT", "ABORT", "READ", "SCAN", "PUT", "DELETE", "NOTE"] },
+        "args": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "key": { "type": "string" },
+            "prefix": { "type": "string" },
+            "where": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["cmp", "value"],
+              "properties": { "cmp": { "enum": ["==", "!=", "<", "<=", ">", ">="] }, "value": { "type": "integer" } }
+            },
+            "as": { "type": "string" },
+            "expr": { "type": "string" },
+            "value": { "type": "integer" },
+            "text": { "type": "string" }
+          }
+        },
+        "status": { "enum": ["ok", "blocked", "aborted", "skipped", "queued"] },
+        "reason": { "type": "string" },
+        "blockedOn": { "type": "string" },
+        "snapshotTS": { "type": "integer", "minimum": 0 },
+        "stmtTS": { "type": "integer", "minimum": 0 },
+        "result": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "value": { "type": "integer" },
+            "absent": { "type": "boolean" },
+            "rows": { "type": "array", "items": { "$ref": "#/$defs/kv" } },
+            "count": { "type": "integer" },
+            "sum": { "type": "integer" }
+          }
+        },
+        "reads": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["key", "from", "why"],
+            "properties": {
+              "key": { "type": "string" },
+              "from": {
+                "type": ["object", "null"],
+                "additionalProperties": false,
+                "required": ["writer", "commitTS"],
+                "properties": { "writer": { "type": "string" }, "commitTS": { "type": "integer", "minimum": 0 } }
+              },
+              "why": { "type": "string" }
+            }
+          }
+        },
+        "effects": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["kind"],
+            "properties": {
+              "kind": { "enum": ["lock_acquired", "lock_wait", "lock_released", "version_created", "commit", "abort", "rw_edge", "doomed"] },
+              "txn": { "type": "string" },
+              "key": { "type": "string" },
+              "from": { "type": "string" },
+              "to": { "type": "string" },
+              "via": { "type": "string" },
+              "holder": { "type": "string" },
+              "reason": { "type": "string" },
+              "commitTS": { "type": "integer", "minimum": 0 },
+              "value": { "type": "integer" },
+              "deleted": { "type": "boolean" }
+            }
+          }
+        },
+        "storeAfter": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["key", "versions"],
+            "properties": {
+              "key": { "type": "string" },
+              "versions": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["writer", "value", "deleted", "commitTS"],
+                  "properties": {
+                    "writer": { "type": "string" },
+                    "value": { "type": "integer" },
+                    "deleted": { "type": "boolean" },
+                    "commitTS": { "type": "integer", "minimum": 0 }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "note": { "type": ["string", "null"] }
+      }
+    }
+  }
+}
