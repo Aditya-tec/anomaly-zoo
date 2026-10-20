@@ -64,8 +64,12 @@ func TestDeltaReplayMatchesFullSnapshots(t *testing.T) {
 // checks: 2,000 seeds at every level, each validated against the schema, with
 // the digest recomputed from the bytes and stable across a second run.
 func TestEverySchedulePassesSchemaAndDigest(t *testing.T) {
+	seeds := uint64(2000)
+	if testing.Short() {
+		seeds = 200 // the race-detector CI step; the full 2,000 runs without -short
+	}
 	for _, lv := range trace.Levels {
-		for seed := uint64(1); seed <= 2000; seed++ {
+		for seed := uint64(1); seed <= seeds; seed++ {
 			sc := gen.Generate(seed, gen.Config{})
 			tr := mustRun(t, sc, lv)
 			b, err := tr.Marshal()

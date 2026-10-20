@@ -47,7 +47,8 @@ jobs:
           "$(go env GOPATH)/bin/staticcheck" ./...
 
       # The engine is single-threaded by design, so -race mostly guards the
-      # tooling. -short keeps the property tests at 2,000 schedules under the
+      # tooling. -short keeps the property tests at 1,000 schedules per level (and 200
+      # seeds in the unsampled schema/digest test) under the
       # race detector (about 10x slower); the full 20,000 run follows without it.
       - name: go test -race -short
         run: go test -race -short -count=1 ./...

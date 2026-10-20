@@ -20,8 +20,10 @@ func propN() int {
 			return n
 		}
 	}
+	// -short is what CI uses under the race detector (about 10x slower). The
+	// full 20,000 per level runs in the separate non-race step.
 	if testing.Short() {
-		return 2000
+		return 1000
 	}
 	return 20000
 }

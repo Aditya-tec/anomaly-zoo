@@ -5,7 +5,7 @@
 | Format check | `gofmt -l .` (must print nothing) |
 | Vet | `go vet ./...` |
 | Static analysis | `go install honnef.co/go/tools/cmd/staticcheck@latest` then `staticcheck ./...` |
-| Tests | `go test ./...` (property tests: 20,000 schedules per level; `-short` uses 2,000) |
+| Tests | `go test ./...` (property tests: 20,000 schedules per level; `-short` uses 1,000, and 200 seeds in the unsampled schema/digest test) |
 | Race tests | `go test -race -count=1 ./...` (needs gcc; also run in CI) |
 | Long property run | `$env:AZOO_PROP_N='200000'; $env:AZOO_PROP_SEED='1000000'; go test -run 'TestPropertiesSER$' -timeout 60m ./engine/run` |
 | Fault campaign | same, plus `$env:AZOO_SSI_FAULT='NoCommitCheck'` or `'NoAfterCommit'` (P6 is then only counted, not asserted) |
