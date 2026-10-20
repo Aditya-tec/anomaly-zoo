@@ -17,6 +17,8 @@ export default defineConfig({
   webServer: {
     command: `node scripts/serve.mjs ${PORT}`,
     url: `http://127.0.0.1:${PORT}/`,
+    // Firefox test pages are served without COOP only (see scripts/serve.mjs for why).
+    env: { SERVE_OMIT_COOP_FOR_UA: "Firefox/" },
     reuseExistingServer: !process.env.CI,
     timeout: 30_000,
   },

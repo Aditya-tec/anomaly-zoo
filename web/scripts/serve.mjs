@@ -14,6 +14,14 @@ const out = join(root, "out");
 const config = JSON.parse(readFileSync(process.env.SERVE_CONFIG || join(root, "vercel.json"), "utf8"));
 const rules = config.headers.map((h) => ({ re: new RegExp("^" + h.source + "$"), headers: h.headers }));
 const port = Number(process.argv[2] || 4173);
+// Test-driver workaround, opt-in. Playwright's Firefox backend intermittently hangs a
+// navigation forever (no document request is ever issued) when the response carries
+// Cross-Origin-Opener-Policy: same-origin, which forces a browsing-context-group
+// switch. Measured locally under parallel load: 3 of 3 runs clean without the header,
+// 2 of 3 runs hung with it. Real Firefox is not affected. playwright.config.ts sets
+// SERVE_OMIT_COOP_FOR_UA=Firefox/ so only Firefox test pages get no COOP; every other
+// client (Chromium, WebKit, Node fetch, check-deployed.mjs, Lighthouse) sees it.
+const omitCoopFor = process.env.SERVE_OMIT_COOP_FOR_UA ? new RegExp(process.env.SERVE_OMIT_COOP_FOR_UA) : null;
 
 const MIME = {
   ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".mjs": "text/javascript; charset=utf-8",
@@ -63,6 +71,9 @@ createServer((req, res) => {
     const file = resolveFile(path);
     const headers = {};
     for (const [k, v] of headersFor(path)) headers[k] = v;
+    if (omitCoopFor && omitCoopFor.test(String(req.headers["user-agent"] || ""))) {
+      for (const k of Object.keys(headers)) if (k.toLowerCase() === "cross-origin-opener-policy") delete headers[k];
+    }
     if (!file) {
       const nf = join(out, "404.html");
       if (existsSync(nf)) {

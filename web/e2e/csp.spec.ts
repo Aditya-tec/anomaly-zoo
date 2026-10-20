@@ -27,13 +27,17 @@ test("no console errors or CSP violations while using the viewer", async ({ page
 
 test("every page carries a CSP <meta> before its first script, and the response headers are in place", async ({ page, request }) => {
   for (const route of ROUTES) {
-    const res = await request.get(route);
+    // An explicit non-browser user agent: the project's Firefox UA would make the test server omit COOP (see scripts/serve.mjs).
+    const res = await request.get(route, { headers: { "user-agent": "azoo-header-check" } });
     const html = await res.text();
     const meta = html.indexOf('http-equiv="Content-Security-Policy"');
     expect(meta, `${route}: CSP meta missing`).toBeGreaterThan(0);
     expect(meta, `${route}: CSP meta after first script`).toBeLessThan(html.search(/<script\b/i));
     expect(res.headers()["content-security-policy"]).toContain("frame-ancestors 'none'");
     expect(res.headers()["x-content-type-options"]).toBe("nosniff");
+    // Real headers, including COOP (the test server omits it only for Firefox browser pages; this is an API request).
+    expect(res.headers()["cross-origin-opener-policy"]).toBe("same-origin");
+    expect(res.headers()["referrer-policy"]).toBe("no-referrer");
     expect(html).not.toMatch(/https?:\/\/(?!anomaly-zoo\.vercel\.app|github\.com|127\.0\.0\.1|localhost|www\.w3\.org)[a-z0-9.-]+\.[a-z]{2,}/i);
   }
   void page;

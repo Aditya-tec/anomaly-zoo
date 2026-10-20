@@ -13,7 +13,11 @@ for (const path of ["/", "/anomalies/write-skew", "/about"]) {
       page.on("request", (r) => pending.set(r.url(), `${r.resourceType()} ${r.method()}`));
       page.on("requestfinished", (r) => pending.delete(r.url()));
       page.on("requestfailed", (r) => pending.delete(r.url()));
-      await page.goto(path, { waitUntil: "commit" });
+      try {
+        await page.goto(path, { waitUntil: "commit", timeout: 15_000 });
+      } catch (e) {
+        throw new Error(`no response to the document request on ${path} (iteration ${i}). Pending: ${JSON.stringify([...pending])}. ${String(e)}`);
+      }
       let loaded = true;
       try {
         await page.waitForLoadState("load", { timeout: 10_000 });
