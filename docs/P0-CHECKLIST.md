@@ -50,13 +50,13 @@ Pass: all four hold and AC0.2 passed. Fail: any inline script blocked in any bro
 
 ```powershell
 curl.exe -sI https://<host>/engine/engine.json
-curl.exe -sI https://<host>/engine/azoo.7ffc34bf.wasm
+curl.exe -sI https://<host>/engine/azoo.2249ad7f.wasm
 curl.exe -sI https://<host>/engine/worker.js
 curl.exe -sI https://<host>/
-curl.exe -sI -H "accept-encoding: br" https://<host>/engine/azoo.7ffc34bf.wasm
+curl.exe -sI -H "accept-encoding: br" https://<host>/engine/azoo.2249ad7f.wasm
 ```
 
-(`azoo.7ffc34bf.wasm` is the current file name; use the `wasm` value from `web/public/engine/engine.json` if it has changed.)
+(`azoo.2249ad7f.wasm` is the current file name; use the `wasm` value from `web/public/engine/engine.json` if it has changed.)
 
 Pass:
 | URL | Required headers |

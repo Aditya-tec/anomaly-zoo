@@ -3,6 +3,10 @@
 //	CGO_ENABLED=0 GOOS=js GOARCH=wasm go build -trimpath \
 //	    -ldflags="-s -w -buildid=" -mod=readonly ./cmd/wasm
 //
+// -buildvcs=false is essential: by default Go stamps the HEAD commit hash, time
+// and a +dirty marker into the binary, which would change the hash on every
+// commit and make it depend on the state of the working tree.
+//
 // It writes <out>/azoo.<hash8>.wasm, copies wasm_exec.js from the same Go
 // toolchain's GOROOT and writes <out>/engine.json. With -verify it rebuilds
 // into a temporary directory and fails if the hash differs from engine.json.
@@ -35,7 +39,7 @@ type Engine struct {
 // BuildWasm compiles ./cmd/wasm from repoRoot to dst and returns the bytes.
 // extraEnv (for example GOCACHE=...) is appended to the build environment.
 func BuildWasm(repoRoot, dst string, extraEnv ...string) ([]byte, error) {
-	cmd := exec.Command("go", "build", "-mod=readonly", "-trimpath", "-ldflags=-s -w -buildid=", "-o", dst, "./cmd/wasm")
+	cmd := exec.Command("go", "build", "-mod=readonly", "-trimpath", "-buildvcs=false", "-ldflags=-s -w -buildid=", "-o", dst, "./cmd/wasm")
 	cmd.Dir = repoRoot
 	cmd.Env = append(os.Environ(), "CGO_ENABLED=0", "GOOS=js", "GOARCH=wasm", "GOFLAGS=-mod=readonly")
 	cmd.Env = append(cmd.Env, extraEnv...)

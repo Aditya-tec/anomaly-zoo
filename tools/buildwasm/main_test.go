@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"os"
 	"path/filepath"
@@ -22,6 +23,11 @@ func TestBuildIsReproducible(t *testing.T) {
 	b, err := BuildWasm(repoRoot, filepath.Join(t.TempDir(), "b.wasm"), "GOCACHE="+t.TempDir())
 	if err != nil {
 		t.Fatal(err)
+	}
+	// Go must not stamp the commit into the binary (that would make the hash
+	// change with every commit and with a dirty working tree).
+	if bytes.Contains(a, []byte("anomaly-zoo\tv0.0.0-")) || bytes.Contains(a, []byte("vcs.revision")) {
+		t.Fatal("binary embeds VCS stamping; -buildvcs=false is missing")
 	}
 	if sum(a) != sum(b) {
 		t.Fatalf("two builds differ: %s vs %s", sum(a), sum(b))

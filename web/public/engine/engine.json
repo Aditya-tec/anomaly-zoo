@@ -1,8 +1,8 @@
 {
   "engineVersion": "1.0.0",
   "goVersion": "go1.27.0",
-  "wasm": "azoo.7ffc34bf.wasm",
-  "wasmSha256": "7ffc34bfbaa2a4a640c29a86a6a810e2213b84cec3e6b8a85f8fae08d611a9f6",
+  "wasm": "azoo.2249ad7f.wasm",
+  "wasmSha256": "2249ad7fb38b3570533757a3d8d37d15f23e5acb148bc8199d9a391481bf024e",
   "wasmExec": "wasm_exec.js",
   "wasmExecSha256": "0c949f4996f9a89698e4b5c586de32249c3b69b7baadb64d220073cc04acba14"
 }
