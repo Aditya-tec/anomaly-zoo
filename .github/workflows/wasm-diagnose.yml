@@ -1,0 +1,45 @@
+name: wasm-diagnose
+
+# Manual only. Builds the engine WASM with exactly the command tools/buildwasm
+# uses, prints what the toolchain recorded, and uploads the binary so it can be
+# compared with the committed one. It does not touch the expected hash.
+on:
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+          cache: false
+
+      - name: Build twice (second with an empty build cache) and report
+        run: |
+          set -eu
+          uname -a
+          go version
+          go env GOROOT GOFLAGS GOTOOLCHAIN GOAMD64 GOWASM CGO_ENABLED
+          export CGO_ENABLED=0 GOOS=js GOARCH=wasm GOFLAGS=-mod=readonly
+          echo "build command: go build -mod=readonly -trimpath '-ldflags=-s -w -buildid=' -o <out> ./cmd/wasm"
+          go build -mod=readonly -trimpath "-ldflags=-s -w -buildid=" -o "$RUNNER_TEMP/azoo-linux.wasm" ./cmd/wasm
+          GOCACHE="$RUNNER_TEMP/cold-cache" go build -mod=readonly -trimpath "-ldflags=-s -w -buildid=" -o "$RUNNER_TEMP/azoo-linux-cold.wasm" ./cmd/wasm
+          sha256sum "$RUNNER_TEMP"/azoo-linux*.wasm
+          ls -l "$RUNNER_TEMP"/azoo-linux*.wasm
+          cp "$RUNNER_TEMP/azoo-linux.wasm" azoo-linux.wasm
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: azoo-linux-wasm
+          path: azoo-linux.wasm
+          retention-days: 3
