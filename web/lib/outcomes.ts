@@ -100,27 +100,61 @@ export function cellView(level: Level, cell: ManifestTrace): CellView {
   return { level, outcome, label: outcomeLabel(outcome), mechanism: mechanismLabel(cell.mechanism, cell.aborts) };
 }
 
+export type SummaryKind = Outcome | "serializable" | "not-serializable";
+
+export interface Summary {
+  kind: SummaryKind;
+  tone: Tone;
+  label: OutcomeLabel;
+}
+
+/**
+ * One-glance result of a trace. With invariants (the canned scenarios) it is
+ * the invariant outcome; without any (a playground scenario, spec §5.4) it is
+ * the serializability oracle's verdict, which is all there is to show.
+ */
+export function summaryFor(trace: Trace): Summary {
+  if (trace.invariants.length > 0) {
+    const o = invariantOutcome(trace);
+    return { kind: o, tone: outcomeTone(o), label: outcomeLabel(o) };
+  }
+  return trace.serializable.verdict
+    ? { kind: "serializable", tone: "good", label: { glyph: "✓", text: "Serializable" } }
+    : { kind: "not-serializable", tone: "bad", label: { glyph: "✗", text: "Not serializable" } };
+}
+
 export interface Banner {
-  outcome: Outcome;
+  kind: SummaryKind;
+  tone: Tone;
+  label: OutcomeLabel;
   headline: string;
   lines: string[];
 }
 
 export function bannerFromTrace(trace: Trace): Banner {
-  const name = anomalyName(trace.scenario.title);
   const level = LEVEL_NAMES[trace.level];
-  const outcome = invariantOutcome(trace);
-  const verb = outcome === "occurs" ? "occurs" : outcome === "prevented" ? "is prevented" : "was not evaluated";
+  const sum = summaryFor(trace);
   const lines: string[] = [];
+  const aborts = engineAborts(trace);
+
+  if (trace.invariants.length === 0) {
+    lines.push(verdictText(trace));
+    for (const id of Object.keys(aborts).sort()) lines.push(`${id} aborted: ${abortSummary(aborts[id] ?? "")}.`);
+    const headline = trace.serializable.verdict
+      ? `At ${level}, the committed transactions match a serial order.`
+      : `At ${level}, the committed transactions match no serial order.`;
+    return { ...sum, headline, lines };
+  }
+
+  const name = anomalyName(trace.scenario.title) || "This schedule";
+  const verb = sum.kind === "occurs" ? "occurs" : sum.kind === "prevented" ? "is prevented" : "was not evaluated";
   for (const inv of trace.invariants) {
     lines.push(`Invariant "${inv.name}": ${inv.status}${inv.detail ? ` (${inv.detail})` : ""}.`);
   }
-  const aborts = engineAborts(trace);
   for (const id of Object.keys(aborts).sort()) lines.push(`${id} aborted: ${abortSummary(aborts[id] ?? "")}.`);
-  if (outcome === "prevented" && Object.keys(aborts).length === 0) lines.push(mechanismLabel(mechanismOf(trace), aborts));
-  return { outcome, headline: `${name} ${verb} at ${level}.`, lines };
+  if (sum.kind === "prevented" && Object.keys(aborts).length === 0) lines.push(mechanismLabel(mechanismOf(trace), aborts));
+  return { ...sum, headline: `${name} ${verb} at ${level}.`, lines };
 }
-
 /** Spec §7.6 wording for a history no serial order explains. */
 export function verdictText(trace: Trace): string {
   if (!trace.serializable.verdict) {
@@ -137,4 +171,15 @@ export function defaultLevelFor(s: ManifestScenario): Level {
   let pick: Level = "RU";
   for (const lv of LEVELS) if (s.traces[lv].invariant === "violated") pick = lv;
   return pick;
+}
+
+/** Default level for a set of fresh traces (the playground): the highest level at which the run still goes wrong. */
+export function defaultLevelFromTraces(traces: Record<Level, Trace>): Level {
+  let pick: Level | null = null;
+  for (const lv of LEVELS) {
+    const k = summaryFor(traces[lv]).kind;
+    if (k === "occurs" || k === "not-serializable") pick = lv;
+  }
+  if (pick) return pick;
+  return traces.RU.invariants.length > 0 ? "RU" : "SER";
 }

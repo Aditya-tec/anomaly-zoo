@@ -1,0 +1,14 @@
+scenario non-repeatable-read
+title "Non-Repeatable Read: the same question, two answers"
+story "T1 reads Alice's balance twice. In between, T2 deposits money and commits."
+invariant "T1 sees one balance for its whole transaction": first == second
+setup:
+  PUT balance:alice = 100
+schedule:
+  T1 BEGIN
+  T2 BEGIN
+  T1 READ balance:alice AS first
+  T2 PUT balance:alice = 150
+  T2 COMMIT
+  T1 READ balance:alice AS second
+  T1 COMMIT

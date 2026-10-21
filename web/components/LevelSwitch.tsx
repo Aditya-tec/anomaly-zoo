@@ -1,6 +1,6 @@
 import type { Level, Trace } from "@/lib/types";
 import { LEVELS, LEVEL_DEFINITIONS, LEVEL_NAMES } from "@/lib/levels";
-import { invariantOutcome, outcomeLabel, outcomeTone } from "@/lib/outcomes";
+import { summaryFor } from "@/lib/outcomes";
 
 interface Props {
   level: Level;
@@ -17,12 +17,12 @@ export function LevelSwitch({ level, traces, onChange }: Props) {
           Isolation level
         </span>
         {LEVELS.map((lv) => {
-          const o = invariantOutcome(traces[lv]);
-          const label = outcomeLabel(o);
+          const sum = summaryFor(traces[lv]);
+          const label = sum.label;
           return (
             <label key={lv}>
               <input type="radio" name="level" value={lv} checked={level === lv} onChange={() => onChange(lv)} className="sr-only" data-testid={`level-${lv}`} />
-              <span className={`seg tone-${outcomeTone(o)}`}>
+              <span className={`seg tone-${sum.tone}`}>
                 <span className="mono font-bold">{lv}</span>
                 <span className="seg-name">{LEVEL_NAMES[lv]}</span>
                 <span className="tone-text text-sm">

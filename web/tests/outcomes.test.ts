@@ -83,14 +83,14 @@ describe("banner and verdict text are generated from traces", () => {
 
   it("write skew at SI: bug, with the invariant detail from the engine", () => {
     const b = bannerFromTrace(trace("write-skew", "SI"));
-    expect(b.outcome).toBe("occurs");
+    expect(b.kind).toBe("occurs");
     expect(b.headline).toBe("Write Skew occurs at Snapshot Isolation.");
     expect(b.lines.join(" ")).toContain("lhs=0 rhs=1");
   });
 
   it("write skew at SER: prevented, naming the aborted transaction and its reason", () => {
     const b = bannerFromTrace(trace("write-skew", "SER"));
-    expect(b.outcome).toBe("prevented");
+    expect(b.kind).toBe("prevented");
     expect(b.headline).toBe("Write Skew is prevented at Serializable.");
     expect(b.lines.join(" ")).toContain("T2 aborted: could not serialize access due to read/write dependencies among transactions.");
   });
@@ -98,14 +98,14 @@ describe("banner and verdict text are generated from traces", () => {
   it("deadlock occurs at every level and the abort is reported", () => {
     for (const lv of LEVELS) {
       const b = bannerFromTrace(trace("deadlock", lv));
-      expect(b.outcome).toBe("occurs");
+      expect(b.kind).toBe("occurs");
       expect(b.lines.join(" ")).toContain("T2 aborted: deadlock detected.");
     }
   });
 
   it("visibility-only prevention gets the visibility sentence", () => {
     const b = bannerFromTrace(trace("non-repeatable-read", "SI"));
-    expect(b.outcome).toBe("prevented");
+    expect(b.kind).toBe("prevented");
     expect(b.lines.at(-1)).toBe(mechanismLabel("visibility", {}));
   });
 

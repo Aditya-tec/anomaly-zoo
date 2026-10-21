@@ -9,10 +9,10 @@ import { bannerFromTrace } from "@/lib/outcomes";
 import { allTraces, manifest } from "../tests/fixtures";
 
 describe("hidden-until-later features (spec §13.3: no PostgreSQL claim before P8)", () => {
-  it("all three feature flags are off", () => {
+  it("the PostgreSQL badge and the conformance section are still off; the playground is on (P7)", () => {
     expect(SHOW_PG_BADGE).toBe(false);
-    expect(SHOW_PLAYGROUND).toBe(false);
     expect(SHOW_CONFORMANCE_SECTION).toBe(false);
+    expect(SHOW_PLAYGROUND).toBe(true);
   });
 
   it("the PostgreSQL badge renders nothing, even when handed a result", () => {

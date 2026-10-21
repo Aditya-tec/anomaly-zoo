@@ -4,7 +4,7 @@ import { useState, type CSSProperties } from "react";
 import type { Level, Trace } from "@/lib/types";
 import { LEVELS, LEVEL_NAMES } from "@/lib/levels";
 import { txnColorVar, txnGlyph } from "@/lib/glyphs";
-import { invariantOutcome, outcomeLabel, outcomeTone } from "@/lib/outcomes";
+import { summaryFor } from "@/lib/outcomes";
 
 interface Props {
   traces: Record<Level, Trace>;
@@ -37,10 +37,10 @@ export function CompareStrip({ traces, level, step, onPick }: Props) {
         {LEVELS.map((lv) => {
           const t = traces[lv];
           const k = Math.min(step, t.steps.length);
-          const o = invariantOutcome(t);
-          const label = outcomeLabel(o);
+          const sum = summaryFor(t);
+          const label = sum.label;
           return (
-            <div key={lv} className={`card p-3 tone-${outcomeTone(o)}`} data-testid={`compare-${lv}`} data-current={lv === level ? "true" : "false"}>
+            <div key={lv} className={`card p-3 tone-${sum.tone}`} data-testid={`compare-${lv}`} data-current={lv === level ? "true" : "false"}>
               <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
                 <p className="m-0 font-semibold">
                   <span className="mono">{lv}</span> <span className="text-sm font-normal text-muted">{LEVEL_NAMES[lv]}</span>

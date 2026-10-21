@@ -1,0 +1,16 @@
+scenario deadlock
+title "Deadlock: two transactions waiting on each other"
+story "T1 locks a then wants b. T2 locks b then wants a. Neither can continue."
+invariant "Both transactions complete": committed(T1) + committed(T2) == 2
+setup:
+  PUT a = 1
+  PUT b = 1
+schedule:
+  T1 BEGIN
+  T2 BEGIN
+  T1 PUT a = 2
+  T2 PUT b = 2
+  T1 PUT b = 3
+  T2 PUT a = 3
+  T1 COMMIT
+  T2 COMMIT

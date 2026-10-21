@@ -1,0 +1,13 @@
+scenario dirty-read
+title "Dirty Read: seeing a value that never existed"
+story "T1 changes a price to 2 but has not committed. T2 reads the price. Then T1 changes its mind and aborts."
+invariant "T2 only sees a committed price": b == 1
+setup:
+  PUT price = 1
+schedule:
+  T1 BEGIN
+  T2 BEGIN
+  T1 PUT price = 2
+  T2 READ price AS b
+  T1 ABORT
+  T2 COMMIT

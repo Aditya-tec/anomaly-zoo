@@ -1,10 +1,9 @@
 import type { Banner } from "@/lib/outcomes";
-import { outcomeLabel, outcomeTone } from "@/lib/outcomes";
 
 export function ResultBanner({ banner }: { banner: Banner }) {
-  const label = outcomeLabel(banner.outcome);
+  const label = banner.label;
   return (
-    <div className={`banner p-4 tone-${outcomeTone(banner.outcome)}`} aria-live="polite" data-testid="result-banner" data-outcome={banner.outcome}>
+    <div className={`banner p-4 tone-${banner.tone}`} aria-live="polite" data-testid="result-banner" data-outcome={banner.kind}>
       <p className="m-0 text-xl font-bold">
         <span className="tone-text">
           <span aria-hidden="true">{label.glyph} </span>

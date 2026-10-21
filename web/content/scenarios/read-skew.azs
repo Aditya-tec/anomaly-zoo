@@ -1,0 +1,16 @@
+scenario read-skew
+title "Read Skew: a total that does not add up"
+story "Alice has 50 in checking and 50 in savings. T1 reads both to compute her total. In between, T2 moves 25 from checking to savings."
+invariant "T1 computes a total of 100": checking + savings == 100
+setup:
+  PUT acct:checking = 50
+  PUT acct:savings = 50
+schedule:
+  T1 BEGIN
+  T2 BEGIN
+  T1 READ acct:checking AS checking
+  T2 PUT acct:checking = 25
+  T2 PUT acct:savings = 75
+  T2 COMMIT
+  T1 READ acct:savings AS savings
+  T1 COMMIT

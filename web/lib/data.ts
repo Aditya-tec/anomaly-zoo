@@ -8,6 +8,7 @@ import { join } from "node:path";
 import type { Level, Manifest, ManifestScenario, Trace } from "./types";
 import { LEVELS } from "./levels";
 import { parseManifest, parseTrace } from "./parse";
+import { orderScenarios } from "./home";
 
 const PUBLIC = join(process.cwd(), "public");
 
@@ -53,4 +54,20 @@ export interface EngineInfo {
 
 export function loadEngineInfo(): EngineInfo {
   return JSON.parse(readFileSync(join(PUBLIC, "engine", "engine.json"), "utf8")) as EngineInfo;
+}
+
+/** The .azs source of a canned scenario, kept inside web/ (content/scenarios) so a deploy with web/ as its root needs nothing outside it. */
+export function loadSource(slug: string): string {
+  loadScenario(slug); // rejects anything that is not in the manifest (no path tricks)
+  return readFileSync(join(process.cwd(), "content", "scenarios", `${slug}.azs`), "utf8");
+}
+
+export interface Example {
+  id: string;
+  title: string;
+  source: string;
+}
+
+export function loadExamples(): Example[] {
+  return orderScenarios(loadManifest().scenarios).map((s) => ({ id: s.id, title: s.title, source: loadSource(s.id) }));
 }

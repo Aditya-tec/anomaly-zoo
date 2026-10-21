@@ -1,10 +1,11 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { loadAllTraces, loadManifest } from "@/lib/data";
+import { loadAllTraces, loadExamples, loadManifest } from "@/lib/data";
 import { LEVELS } from "@/lib/levels";
 import type { Level, Trace } from "@/lib/types";
 
 export const manifest = loadManifest();
+export const examples = loadExamples();
 
 export const allTraces: { id: string; level: Level; trace: Trace }[] = manifest.scenarios.flatMap((s) => {
   const t = loadAllTraces(s.id);

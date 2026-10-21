@@ -1,0 +1,15 @@
+scenario phantom
+title "Phantom: a row appears mid-transaction"
+story "T1 counts the employees in a department twice. In between, T2 hires someone and commits."
+invariant "T1's two counts agree": count(before) == count(after)
+setup:
+  PUT emp:1 = 1
+  PUT emp:2 = 1
+schedule:
+  T1 BEGIN
+  T2 BEGIN
+  T1 SCAN emp: AS before
+  T2 PUT emp:3 = 1
+  T2 COMMIT
+  T1 SCAN emp: AS after
+  T1 COMMIT
