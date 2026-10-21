@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SITE_NAME, TAGLINE } from "@/lib/site";
-import { SITE_URL } from "@/lib/data";
+import { SITE_URL } from "@/lib/site";
 import "./grid-classes.css";
 import "./globals.css";
 

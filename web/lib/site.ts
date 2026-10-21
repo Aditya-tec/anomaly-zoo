@@ -7,3 +7,15 @@ export const SHOW_CONFORMANCE_SECTION = true; // P8: About page conformance repo
 
 export const SITE_NAME = "Anomaly Zoo";
 export const TAGLINE = "Watch database isolation bugs happen. Then turn them off.";
+
+/**
+ * The production URL, the single place it is written in the web app. The
+ * sitemap, robots.txt, Open Graph metadata and the share-image cards all read it.
+ * To change it, run `node scripts/site-url.mjs --set https://new-host.example`
+ * from the repository root: it rewrites this line and the documents that quote
+ * the URL, and `--check` (run in CI) fails if any of them disagree.
+ * If the share images show the old host, regenerate them with `npm run og`.
+ */
+export const SITE_URL = "https://anomaly-zoo.vercel.app";
+/** Host part of SITE_URL, as printed on the share images. */
+export const SITE_HOST = new URL(SITE_URL).host;

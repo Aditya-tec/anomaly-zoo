@@ -13,7 +13,8 @@ import { parseConformance, type Conformance } from "./conformance";
 
 const PUBLIC = join(process.cwd(), "public");
 
-export const SITE_URL = "https://anomaly-zoo.vercel.app";
+// Re-exported for existing imports; the value lives in lib/site.ts.
+export { SITE_URL } from "./site";
 
 let manifestCache: Manifest | null = null;
 

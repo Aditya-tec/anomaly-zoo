@@ -4,7 +4,7 @@ import { LEVEL_NAMES } from "@/lib/levels";
 import { buildHomeData } from "@/lib/home";
 import { anomalyName, outcomeTone } from "@/lib/outcomes";
 import { DEFAULT_OG } from "@/lib/seo";
-import { SITE_NAME, TAGLINE } from "@/lib/site";
+import { SITE_HOST, SITE_NAME, TAGLINE } from "@/lib/site";
 
 // Render target for the 1200 x 630 share images in public/og/. `npm run og`
 // screenshots these pages. They are not meant to be visited or indexed.
@@ -27,7 +27,7 @@ export default async function OgPage({ params }: Params) {
     <main className="og-card" data-testid="og-card" data-slug={slug}>
       <div className="og-top">
         <span className="og-brand">{SITE_NAME}</span>
-        <span className="og-url">anomaly-zoo.vercel.app</span>
+        <span className="og-url">{SITE_HOST}</span>
       </div>
       {row ? (
         <>

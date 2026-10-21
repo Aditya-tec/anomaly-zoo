@@ -2,7 +2,7 @@ import { PG_LEVELS, percent, type ConfCannedLevel, type Conformance, type PgLeve
 import { LEVEL_NAMES } from "@/lib/levels";
 import { outcomeFromInvariant, outcomeLabel, outcomeTone } from "@/lib/outcomes";
 
-// The "Comparison with a real database" section of the About page. Every number
+// The "Comparison with PostgreSQL" section of the About page. Every number
 // and every outcome is read from conformance.json; nothing here is typed in.
 
 function OutcomeCell({ invariant }: { invariant: string }) {
@@ -40,7 +40,7 @@ export function ConformanceSection({ conf }: { conf: Conformance }) {
   return (
     <section id="conformance" aria-labelledby="conf-h" className="mt-10 scroll-mt-4" data-testid="conformance">
       <h2 id="conf-h" className="m-0 mb-2 text-2xl font-semibold">
-        Comparison with a real database
+        Comparison with PostgreSQL
       </h2>
       <p>
         The same schedules were run on this engine (version{" "}

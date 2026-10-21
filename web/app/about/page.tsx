@@ -11,13 +11,15 @@ export const metadata: Metadata = pageMetadata({
   path: "/about",
 });
 
-// Limits, from spec §13.3. Item 3 and item 4 are reworded to drop statements
-// about PostgreSQL that are not yet verified; see docs/COPY-TODO.md.
-const LIMITS: readonly string[] = [
+// Limits, from spec §13.3. Items 3 and 4 make PostgreSQL statements, each backed by the
+// measured comparison below (conformance.json); see docs/COPY-TODO.md.
+const limits = (pgHasNoReadUncommitted: boolean): readonly string[] => [
   "A key–integer model with prefix scans; no SQL, indexes, or durability.",
   "A deterministic single-threaded simulation of interleavings, not real concurrency.",
-  "Read Uncommitted is included for teaching, to show dirty reads.",
-  "The Serializable level is a simplified version: it uses prefix-level predicate locks and has no read-only optimization, so it can abort more transactions than a production database would.",
+  pgHasNoReadUncommitted
+    ? "Read Uncommitted is included for teaching, to show dirty reads. PostgreSQL has no read-uncommitted; the comparison below shows what it does when asked for it."
+    : "Read Uncommitted is included for teaching, to show dirty reads.",
+  "The Serializable level is a simplified version: its predicate locks are per key prefix and it has no read-only optimization. The comparison below measures how its aborts differ from PostgreSQL's.",
   "Vendor behaviors differ; this explains concepts and does not replace your database's documentation.",
 ];
 
@@ -52,7 +54,7 @@ export default function AboutPage() {
           Limits
         </h2>
         <ol className="m-0 list-decimal space-y-2 pl-6">
-          {LIMITS.map((l) => (
+          {limits(!conf.readUncommitted.dirtyReadObserved).map((l) => (
             <li key={l}>{l}</li>
           ))}
         </ol>
