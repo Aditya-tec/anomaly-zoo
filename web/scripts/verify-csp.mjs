@@ -1,7 +1,7 @@
 // Independent check of the injected CSP: every inline script is covered by a
 // hash in the page's own <meta> policy, no hash is unused, nothing allows
 // 'unsafe-inline'/'unsafe-eval' for scripts, and the policy comes before the
-// first script in the document.
+// first script in the document. style-src has no 'unsafe-inline' and no page uses inline styles.
 import { readFileSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { dirname, resolve } from "node:path";
@@ -28,6 +28,16 @@ for (const file of htmlFiles(out)) {
   for (const bad of ["'unsafe-inline'", "'unsafe-eval'", "'wasm-unsafe-eval'", "data:", "blob:", "*"]) {
     if (scriptSrc.includes(bad)) problems.push(`${name}: script-src contains ${bad}`);
   }
+  // style-src: no 'unsafe-inline', and nothing in the page may need it (no <style> block, no style attribute).
+  const styleSrc = (csp.split(";").map((d) => d.trim()).find((d) => d.startsWith("style-src ")) || "").split(/\s+/).slice(1);
+  if (styleSrc.length === 0) problems.push(`${name}: no style-src`);
+  for (const bad of ["'unsafe-inline'", "'unsafe-eval'", "*", "data:", "blob:"]) {
+    if (styleSrc.includes(bad)) problems.push(`${name}: style-src contains ${bad}`);
+  }
+  const styleTags = (html.match(/<style/gi) || []).length;
+  const styleAttrs = (html.match(/\sstyle\s*=/gi) || []).length;
+  if (styleTags) problems.push(`${name}: ${styleTags} inline <style> block(s) would be blocked by style-src`);
+  if (styleAttrs) problems.push(`${name}: ${styleAttrs} inline style attribute(s) would be blocked by style-src`);
   if (!csp.includes("default-src 'none'")) problems.push(`${name}: default-src is not 'none'`);
   if (/frame-ancestors/.test(csp)) problems.push(`${name}: frame-ancestors in <meta> is ignored by browsers`);
   const firstScript = html.search(/<script\b/i);

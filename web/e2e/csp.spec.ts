@@ -93,3 +93,64 @@ test("no CSP violations or console errors with the engine loaded, in the playgro
   await expect(page.getByTestId("rerun-identical")).toBeVisible({ timeout: 30_000 });
   await expectClean(page, w);
 });
+
+// style-src has no 'unsafe-inline' (spec 10.3): no page needs an inline style,
+// and the browser must refuse one if something tried to add it.
+test("style-src is enforced: an inline style attribute and a <style> block are refused and reported", async ({ page }) => {
+  await page.addInitScript(() => {
+    (window as unknown as { __csp: string[] }).__csp = [];
+    document.addEventListener("securitypolicyviolation", (e) => (window as unknown as { __csp: string[] }).__csp.push(e.violatedDirective));
+  });
+  await page.goto("/anomalies/lost-update?level=RC");
+  await expect(page.getByTestId("viewer")).toHaveAttribute("data-ready", "true");
+  // Nothing in the markup uses a style attribute; the only one in the live DOM is Next.js's own route announcer, set through the CSSOM (which style-src does not govern).
+  const styled = await page.evaluate(() => [...document.querySelectorAll("[style]")].map((e) => e.tagName));
+  expect(styled.filter((t) => t !== "NEXT-ROUTE-ANNOUNCER")).toEqual([]);
+  const result = await page.evaluate(() => {
+    const d = document.createElement("div");
+    d.setAttribute("style", "display:none");
+    d.textContent = "x";
+    document.body.appendChild(d);
+    const attr = getComputedStyle(d).display;
+    const s = document.createElement("style");
+    s.textContent = "body { outline: 9px solid red }";
+    document.head.appendChild(s);
+    return { attr, outline: getComputedStyle(document.body).outlineStyle };
+  });
+  expect(result.attr).not.toBe("none");
+  expect(result.outline).toBe("none");
+  const kinds = await page.evaluate(() => (window as unknown as { __csp: string[] }).__csp);
+  expect(kinds.some((k) => k.startsWith("style-src"))).toBe(true);
+});
+
+// Clickjacking (spec 10.1): frame-ancestors 'none' in the response header. A page
+// from another origin that embeds the site must end up with nothing of the site in the frame.
+test("the site cannot be framed by another page (with a control that proves the check can see a framed page)", async ({ page, baseURL }) => {
+  const framed = async (): Promise<string> => {
+    await page.goto("about:blank");
+    await page.setContent(`<iframe src="${baseURL}/about" width="600" height="400"></iframe>`);
+    await page.waitForTimeout(1500);
+    const frame = page.frames().find((f) => f !== page.mainFrame());
+    expect(frame, "the iframe element exists").toBeDefined();
+    // A blocked frame holds a browser error document (or none): evaluating in it fails or never answers.
+    return Promise.race([
+      frame!.evaluate(() => document.body?.innerText ?? "").catch(() => ""),
+      new Promise<string>((resolve) => setTimeout(() => resolve(""), 3000)),
+    ]);
+  };
+
+  // Control: without the frame-ancestors header the very same frame shows the page.
+  await page.route("**/about", async (route) => {
+    const res = await route.fetch();
+    const headers = { ...res.headers() };
+    delete headers["content-security-policy"];
+    await route.fulfill({ response: res, headers });
+  });
+  expect(await framed()).toContain("About Anomaly Zoo");
+  await page.unroute("**/about");
+
+  // Real headers: nothing of the site appears in the frame.
+  const text = await framed();
+  expect(text).not.toContain("About Anomaly Zoo");
+  expect(text).not.toContain("Privacy");
+});

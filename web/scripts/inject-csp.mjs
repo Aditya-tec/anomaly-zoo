@@ -38,7 +38,7 @@ export function policy(hashes) {
   return [
     "default-src 'none'",
     ["script-src 'self'", ...hashes].join(" "),
-    "style-src 'self' 'unsafe-inline'",
+    "style-src 'self'",
     "img-src 'self' data:",
     "font-src 'self'",
     "connect-src 'self'",

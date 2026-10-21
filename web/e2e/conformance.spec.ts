@@ -93,9 +93,10 @@ test.describe("J4: the About page numbers equal conformance.json", () => {
 });
 
 test.describe("J4: the PostgreSQL badge on each anomaly page equals conformance.json", () => {
-  test("every anomaly at every level", async ({ page }) => {
+  for (const slug of SLUGS) {
+    test(`${slug}, at every level`, async ({ page }) => {
     const w = await watchPage(page);
-    for (const slug of SLUGS) {
+    {
       const entry = conf.canned.find((c) => c.scenario === slug)!;
       for (const lv of LEVELS) {
         await page.goto(`/anomalies/${slug}?level=${lv}`);
@@ -120,5 +121,6 @@ test.describe("J4: the PostgreSQL badge on each anomaly page equals conformance.
       }
     }
     await expectClean(page, w);
-  });
+    });
+  }
 });

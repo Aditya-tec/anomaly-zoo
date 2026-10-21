@@ -239,6 +239,30 @@ test.describe("hostile content stays inert text", () => {
     await expectClean(page, w);
   });
 
+  test("input is never reflected into <title>, meta tags, link tags or the URL (spec 10.4)", async ({ page }) => {
+    const head = () =>
+      page.evaluate(() => ({
+        title: document.title,
+        meta: [...document.querySelectorAll("meta")].map((m) => `${m.getAttribute("name") ?? m.getAttribute("property") ?? m.getAttribute("http-equiv")}=${m.getAttribute("content")}`),
+        links: [...document.querySelectorAll("link")].map((l) => `${l.getAttribute("rel")}=${l.getAttribute("href")}`),
+      }));
+    await openPlayground(page);
+    const baseline = await head();
+    await openPlayground(page, shareUrl(evil).slice("/playground".length));
+    await expect(results(page).getByTestId("result-banner")).toBeVisible();
+    await editor(page).fill(evil.replace("scenario evil", "scenario evilid"));
+    await page.getByTestId("run").click();
+    await expect(results(page).getByTestId("result-banner")).toBeVisible();
+    const after = await head();
+    expect(after).toEqual(baseline);
+    expect(JSON.stringify(after)).not.toMatch(/evil|pwned|<img|<script|javascript:/i);
+    const loc = await page.evaluate(() => ({ search: location.search, path: location.pathname, hash: location.hash }));
+    expect(loc.search).toBe("");
+    expect(loc.path).toBe("/playground");
+    // The only input-derived part of the URL is the share payload itself (spec 7.6): base64url, no raw text.
+    expect(loc.hash).toMatch(/^(#s=[A-Za-z0-9_-]*)?$/);
+  });
+
   test("hostile text typed into the editor is just as inert", async ({ page }) => {
     await openPlayground(page);
     await editor(page).fill(evil);

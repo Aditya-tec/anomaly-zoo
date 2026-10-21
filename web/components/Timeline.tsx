@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useRef, type CSSProperties } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import type { Trace } from "@/lib/types";
-import { txnColorVar, txnGlyph } from "@/lib/glyphs";
+import { txnGlyph } from "@/lib/glyphs";
+import { colClass, colsClass, laneClass } from "@/lib/grid";
 import { EventCard, type EventState } from "./EventCard";
 
 /** What a transaction is doing after `step` events. */
@@ -28,7 +29,7 @@ export function Timeline({ trace, step }: { trace: Trace; step: number }) {
   const ids = useMemo(() => txnIds(trace), [trace]);
   const scroller = useRef<HTMLDivElement>(null);
   const cols = ids.length;
-  const gridStyle = { gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` } as CSSProperties;
+  const colsCls = colsClass(cols);
   const current = trace.steps[step - 1];
 
   useEffect(() => {
@@ -46,10 +47,10 @@ export function Timeline({ trace, step }: { trace: Trace; step: number }) {
 
   return (
     <div ref={scroller} className="timeline-scroll" tabIndex={0} role="region" aria-label="Timeline: one lane per transaction, time flows downwards" data-testid="timeline">
-      <div className="timeline-head" style={gridStyle}>
+      <div className={`timeline-head ${colsCls}`}>
         {ids.map((id) => (
-          <div key={id} className="col-head" style={{ "--txn": txnColorVar(id) } as CSSProperties}>
-            <span style={{ color: "var(--txn)" }} aria-hidden="true">
+          <div key={id} className="col-head" data-txn={id}>
+            <span className="txn-ink" aria-hidden="true">
               {txnGlyph(id)}
             </span>
             <span>{id}</span>
@@ -57,9 +58,9 @@ export function Timeline({ trace, step }: { trace: Trace; step: number }) {
           </div>
         ))}
       </div>
-      <ol className="timeline" style={gridStyle}>
+      <ol className={`timeline ${colsCls}`}>
         {ids.map((id, i) => (
-          <li key={`lane-${id}`} className="lane" aria-hidden="true" style={{ gridColumn: i + 1, gridRow: `1 / ${trace.steps.length + 2}` }} />
+          <li key={`lane-${id}`} className={`lane ${colClass(i + 1)} ${laneClass(trace.steps.length)}`} aria-hidden="true" />
         ))}
         {trace.steps.map((e) => {
           const state: EventState = e.index + 1 === step ? "current" : e.index + 1 < step ? "past" : "future";

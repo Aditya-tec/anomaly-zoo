@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, type CSSProperties } from "react";
+import { useState } from "react";
 import type { Level, Trace } from "@/lib/types";
 import { LEVELS, LEVEL_NAMES } from "@/lib/levels";
-import { txnColorVar, txnGlyph } from "@/lib/glyphs";
+import { txnGlyph } from "@/lib/glyphs";
 import { summaryFor } from "@/lib/outcomes";
 
 interface Props {
@@ -52,8 +52,8 @@ export function CompareStrip({ traces, level, step, onPick }: Props) {
               </div>
               <ol className="mini" aria-label={`${LEVEL_NAMES[lv]}, step ${k} of ${t.steps.length}`}>
                 {t.steps.map((e) => (
-                  <li key={e.index} data-state={e.index + 1 === k ? "current" : e.index + 1 < k ? "past" : "future"} style={{ "--txn": txnColorVar(e.txn) } as CSSProperties}>
-                    <span aria-hidden="true" style={{ color: "var(--txn)" }}>
+                  <li key={e.index} data-state={e.index + 1 === k ? "current" : e.index + 1 < k ? "past" : "future"} data-txn={e.txn}>
+                    <span aria-hidden="true" className="txn-ink">
                       {txnGlyph(e.txn)}
                     </span>{" "}
                     <span className="sr-only">{e.txn} </span>

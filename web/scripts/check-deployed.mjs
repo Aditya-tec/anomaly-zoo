@@ -49,6 +49,9 @@ for (const path of PAGES) {
     check(actual.every((h) => policyHashes.includes(h)), `${path}: an inline script is not covered by a hash`);
     check(policyHashes.every((h) => actual.includes(h)), `${path}: a policy hash matches no inline script`);
     check(!scriptSrc.some((t) => ["'unsafe-inline'", "'unsafe-eval'", "'wasm-unsafe-eval'", "*", "data:", "blob:"].includes(t)), `${path}: script-src allows something unsafe`);
+    const styleSrc = (csp.split(";").map((d) => d.trim()).find((d) => d.startsWith("style-src ")) || "").split(/\s+/).slice(1);
+    check(styleSrc.length > 0 && !styleSrc.some((t) => ["'unsafe-inline'", "'unsafe-eval'", "*", "data:", "blob:"].includes(t)), `${path}: style-src is missing or allows something unsafe`);
+    check(!/\sstyle\s*=/i.test(html) && !/<style\b/i.test(html), `${path}: inline style (attribute or block) in the markup`);
     check(csp.includes("default-src 'none'"), `${path}: default-src is not 'none'`);
     const first = html.search(/<script\b/i);
     check(html.indexOf(m[0]) < (first >= 0 ? first : Infinity), `${path}: CSP <meta> comes after the first <script>`);

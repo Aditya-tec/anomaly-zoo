@@ -1,6 +1,6 @@
-import type { CSSProperties } from "react";
 import type { TraceEvent } from "@/lib/types";
-import { txnColorVar, txnGlyph } from "@/lib/glyphs";
+import { txnGlyph } from "@/lib/glyphs";
+import { colClass, rowClass } from "@/lib/grid";
 import { abortSummary } from "@/lib/outcomes";
 import { CrossIcon, LockIcon, QueueIcon, ResumeIcon, SkipIcon } from "./Icons";
 
@@ -43,13 +43,12 @@ interface Props {
 }
 
 export function EventCard({ event: e, state, col, linked, originStep }: Props) {
-  const style = { "--col": col, "--row": e.index + 1, "--txn": txnColorVar(e.txn) } as CSSProperties;
   const result = resultText(e);
   return (
     <li
       id={`ev-${e.index}`}
-      className="event"
-      style={style}
+      className={`event ${colClass(col)} ${rowClass(e.index + 1)}`}
+      data-txn={e.txn}
       data-state={state}
       data-status={e.status}
       data-resumed={e.resumed ? "true" : "false"}

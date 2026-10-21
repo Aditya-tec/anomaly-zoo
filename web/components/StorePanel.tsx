@@ -1,8 +1,8 @@
 "use client";
 
-import { useMemo, useState, type CSSProperties } from "react";
+import { useMemo, useState } from "react";
 import type { Trace } from "@/lib/types";
-import { txnColorVar, txnGlyph } from "@/lib/glyphs";
+import { txnGlyph } from "@/lib/glyphs";
 import { changedKeys, snapshotsAt, storeAfterEvents } from "@/lib/replay";
 
 // Version chains per key, rebuilt from the trace's deltas and periodic full
@@ -47,8 +47,8 @@ export function StorePanel({ trace, step }: { trace: Trace; step: number }) {
                 <td className="py-1">
                   <ul className="m-0 flex list-none flex-wrap gap-1 p-0">
                     {(store.get(k) ?? []).map((v, i) => (
-                      <li key={i} className="version" style={{ "--txn": txnColorVar(v.writer === "T0" ? "T1" : v.writer) } as CSSProperties} data-uncommitted={v.commitTS === 0 ? "true" : "false"} data-deleted={v.deleted ? "true" : "false"}>
-                        <span aria-hidden="true" style={{ color: "var(--txn)" }}>
+                      <li key={i} className="version" data-txn={v.writer === "T0" ? "T1" : v.writer} data-uncommitted={v.commitTS === 0 ? "true" : "false"} data-deleted={v.deleted ? "true" : "false"}>
+                        <span aria-hidden="true" className="txn-ink">
                           {v.writer === "T0" ? "○" : txnGlyph(v.writer)}
                         </span>
                         <span>{v.writer}</span>
