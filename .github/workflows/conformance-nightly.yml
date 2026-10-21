@@ -1,0 +1,81 @@
+name: conformance-nightly
+
+# Runs the PostgreSQL differential harness (spec §9.4) on a much larger corpus
+# than CI does: 10,000 random schedules per level instead of 500. The report is
+# kept as an artifact; nothing is committed or published from here.
+# Trigger it from the Actions tab (workflow_dispatch) or wait for the schedule.
+
+on:
+  schedule:
+    - cron: "23 3 * * *"
+  workflow_dispatch:
+    inputs:
+      schedules:
+        description: "Random schedules per level"
+        required: false
+        default: "10000"
+
+# No token permissions by default; the job asks for read access to the repository only.
+permissions: {}
+
+concurrency:
+  group: conformance-nightly
+  cancel-in-progress: false
+
+jobs:
+  nightly:
+    name: nightly
+    runs-on: ubuntu-latest
+    timeout-minutes: 345 # the hosted-runner limit is 360
+    permissions:
+      contents: read
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      CONFORMANCE_DATABASE_URL: postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable
+      AZOO_REQUIRE_DB: "1"
+    defaults:
+      run:
+        working-directory: conformance
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: conformance/go.mod
+          cache-dependency-path: conformance/go.sum
+
+      - name: Conformance harness
+        env:
+          # Passed through the environment, never interpolated into the script.
+          SCHEDULES: ${{ github.event.inputs.schedules || '10000' }}
+        run: |
+          set -o pipefail
+          case "$SCHEDULES" in
+            ''|*[!0-9]*) echo "schedules must be a number"; exit 1 ;;
+          esac
+          go run ./cmd/azoo-conformance -random "$SCHEDULES" -workers 6 -stability 10 -show 200 \
+            -out "$RUNNER_TEMP/conformance-nightly.json" | tee "$RUNNER_TEMP/conformance-nightly.txt"
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: conformance-nightly
+          path: |
+            ${{ runner.temp }}/conformance-nightly.json
+            ${{ runner.temp }}/conformance-nightly.txt
+          retention-days: 30

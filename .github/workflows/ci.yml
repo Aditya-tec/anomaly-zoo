@@ -56,10 +56,19 @@ jobs:
       - name: go test (full property runs, 20,000 schedules per level)
         run: go test -count=1 ./...
 
+      # Release check (spec §9.4): the committed PostgreSQL report must describe
+      # the engine that is being released.
+      - name: conformance.json engineVersion equals azoo version
+        run: |
+          want="$(go run ./cmd/azoo version)"
+          got="$(jq -r .engineVersion web/public/conformance.json)"
+          echo "azoo version: $want; conformance.json engineVersion: $got"
+          test -n "$want" && test "$want" = "$got"
+
   conformance:
     name: conformance
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 40
     permissions:
       contents: read
     services:
@@ -95,11 +104,38 @@ jobs:
       - name: go vet
         run: go vet ./...
 
-      - name: AC0.5 - SELECT 1 against the postgres:16 service container
+      - name: Harness tests and SELECT 1 against the postgres:16 service container
         run: |
+          set -o pipefail
           go test -count=1 -v ./... | tee "$RUNNER_TEMP/conformance.txt"
           grep -q -- '--- PASS: TestPostgresSelect1' "$RUNNER_TEMP/conformance.txt"
           grep -i 'server_version' "$RUNNER_TEMP/conformance.txt"
+
+      # AC8.1: the harness runs against the service container and writes the
+      # report (engineVersion, postgresVersion). The exit status is non-zero when
+      # a canned outcome differs undocumented, a mismatch does not reproduce
+      # without a waiter race, or a history is not serializable.
+      - name: Conformance harness (canned scenarios, then 500 random schedules per level)
+        run: |
+          set -o pipefail
+          go run ./cmd/azoo-conformance -random 500 -workers 4 -show 100 -out "$RUNNER_TEMP/conformance.json" | tee "$RUNNER_TEMP/conformance-report.txt"
+
+      - name: Report is for this engine version
+        run: |
+          want="$(cd .. && go run ./cmd/azoo version)"
+          got="$(jq -r .engineVersion "$RUNNER_TEMP/conformance.json")"
+          pg="$(jq -r .postgresVersion "$RUNNER_TEMP/conformance.json")"
+          echo "engine $want; report engine $got; postgres $pg"
+          test "$want" = "$got" && test -n "$pg"
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: conformance-report
+          path: |
+            ${{ runner.temp }}/conformance.json
+            ${{ runner.temp }}/conformance-report.txt
+          retention-days: 30
 
   web:
     name: web
