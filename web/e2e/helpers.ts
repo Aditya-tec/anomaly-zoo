@@ -36,6 +36,12 @@ export async function watchPage(page: Page) {
     if (m.type() === "error" || m.type() === "warning") found.push(`console.${m.type()}: ${m.text()}`);
   });
   page.on("pageerror", (e) => found.push(`pageerror: ${e.message}`));
+  // The engine runs in a worker: its console errors (including CSP refusals) never reach the page.
+  page.on("worker", (w) => {
+    w.on("console", (m) => {
+      if (m.type() === "error" || m.type() === "warning") found.push(`worker console.${m.type()}: ${m.text()}`);
+    });
+  });
   page.on("requestfailed", (r) => {
     const err = r.failure()?.errorText ?? "";
     // A browser cancelling a request (navigating away, closing the page) is not a failure of the site.
@@ -106,4 +112,26 @@ export async function reach(page: Page, selector: string, linkTabbing: boolean, 
   if (backwards) await shiftTabTo(page, selector, max);
   else await tabTo(page, selector, max);
 }
-export const ROUTES = ["/", "/about", ...SLUGS.map((s) => `/anomalies/${s}`)];
+export const ROUTES = ["/", "/about", "/playground", ...SLUGS.map((s) => `/anomalies/${s}`)];
+
+/** A scenario without invariants: only the serializability oracle has anything to say. */
+export const NO_INVARIANT_SOURCE = `scenario t
+setup:
+  PUT doctor:alice = 1
+  PUT doctor:bob = 1
+schedule:
+  T1 BEGIN
+  T2 BEGIN
+  T1 SCAN doctor: WHERE == 1 AS a
+  T2 SCAN doctor: WHERE == 1 AS b
+  T1 PUT doctor:alice = 0
+  T2 PUT doctor:bob = 0
+  T1 COMMIT
+  T2 COMMIT
+`;
+
+/** Strict, unpadded base64url of the UTF-8 bytes, the same encoding the site uses. */
+export const b64url = (s: string | Buffer) => Buffer.from(s).toString("base64url");
+export const shareUrl = (src: string) => `/playground#s=${b64url(src)}`;
+
+export const isEngineUrl = (u: string) => /\/engine\/|\.wasm/.test(u);

@@ -38,4 +38,5 @@ Run from `web/` after `npm ci --ignore-scripts`:
 | e2e + axe in Chromium, Firefox, WebKit (first time: `npx playwright install chromium firefox webkit`) | `npm run e2e` |
 | Lighthouse (mobile; set `CHROME_PATH` if Chrome is not found) | `npm run lighthouse` |
 | Check a running or deployed URL (CSP + headers on every page) | `node scripts/check-deployed.mjs https://<host>` |
+| Regenerate the 1200x630 share images (needs a built site and Chromium); a unit test fails if they are stale | `npm run build; npm run og` |
 | Refresh the traces the site reads | `go run ./cmd/azoo traces --out web/public/traces` (a Go test fails if they are stale) |

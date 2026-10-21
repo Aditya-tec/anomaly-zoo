@@ -64,3 +64,28 @@ Legend: **[spec]** is taken from the spec verbatim or nearly so; **[mine]** is w
 - Default level per anomaly = the highest level at which the bug still happens (computed from the data): Dirty Read RU, Lost Update RC, Write Skew SI, Deadlock SER. The spec's §7.4 example banner implies this but does not say it.
 - Switching the level keeps the same step (clamped), so the same moment can be compared; Reset starts over.
 - "No. 01 ... No. 08" numbering on the map rows (specimen-label look, §7.9) follows the teaching order of §6.1.
+
+## 5. P7 copy (playground, re-run, share images) [mine]
+
+### 5a. Playground page (`app/playground/page.tsx`, `components/Playground.tsx`)
+- Title and description: "Playground" / "Write your own transaction schedule and run it at four isolation levels."
+- Intro: "Edit a schedule, run it at all four isolation levels, and share the link. The engine is loaded when you first run something."
+- Headings and labels: "Scenario", "Scenario source", "Results"; buttons "Run", "Share", "Load example" (menu placeholder "Choose…"; entries are the scenario names); hint "Ctrl or Cmd + Enter runs the scenario."; empty results: "Run a scenario to see it at all four isolation levels."; stale marker: "These results are for an earlier version of the scenario. Run again to update them."
+- Status line: "Running… the first run loads the engine." / "Ran the scenario at all four levels."
+- Errors: "1 problem in the scenario" / "N problems in the scenario" (each line is `line:col message`; the message text comes from the engine's parser).
+- Share: "Share link"; "Link copied."; "Copy the link from the box below."; "This scenario is too large to share as a link (the link would be N characters; the limit is 4096)."
+- Refused share links: "This link could not be used: <reason>. Nothing was run." with reasons "the link contains no scenario", "the link is longer than 4096 characters", "the link is not valid base64url", "the link is not valid base64url (impossible length)", "the link is not canonical base64url", "the link does not contain valid UTF-8 text", plus the limit messages below.
+- Limit messages (spec §4.10 numbers): "The scenario is N bytes; the limit is 8,192." / "The scenario contains control characters, which are not allowed." / "The schedule has N steps; the limit is 200." / "The schedule uses N transactions; the limit is 6." / "The scenario uses N distinct keys; the limit is 64."
+- Engine problems: "The engine did not answer within 2 seconds, so it was restarted. Try a smaller schedule." (the 2 s is the spec's timeout; "Try a smaller schedule." is my advice), "The engine could not be loaded. Check your connection and try again.", "Something went wrong while running the scenario. Nothing was changed."
+- "Scenario language" collapsible reference (four bullets summarising spec §5.3: the keywords, `setup:`/`schedule:`, the eight operations, `#` comments and the §4.10 limits).
+- Results for a scenario **without invariants** (spec §5.4 says only the oracle verdict is shown): chips "✓ Serializable" / "✗ Not serializable"; banner headlines "At <Level>, the committed transactions match a serial order." / "At <Level>, the committed transactions match no serial order."; verdict panel heading "Verdict". The sentence for "not serializable" is the spec's; "Equivalent to running the committed transactions one at a time in this order: T1 → T2." is mine (see 3c). When a scenario has invariants but no title, the headline subject falls back to "This schedule".
+
+### 5b. "Run it yourself" / re-run (`components/RerunPanel.tsx`)
+- Heading "Run it yourself"; "Open this scenario in the playground to edit it and run your own."
+- **[claim-check]** "Or re-run this scenario here: the same engine, compiled to WebAssembly, runs in a worker in your browser and its result is compared with the published traces. This downloads the engine (about 1 MB compressed) only when you press the button." The 1 MB is the measured brotli size (1,044,049 B); a browser served gzip would download about 1.4 MB. Say if you want a different number or no number.
+- Button "Re-run in your browser" (spec §7.6 gives the name). Status "Running the engine in your browser…". Success: "✓ identical to the published trace" (spec wording) plus "All four levels match (engine 1.0.0, WebAssembly, in a worker)." Mismatch: "✗ does not match the published trace", "The engine in your browser produced a different result than the one the site was built from. Digests per level:", per level "<Level> (<id>): identical/different", "published: <digest>", "your browser: <digest>".
+
+### 5c. Share images and page metadata
+- Card text: "ANOMALY ZOO", "anomaly-zoo.vercel.app", the anomaly name and the part of the scenario title after the colon, level code, level name, glyph + outcome word per level (from the data); the `zoo` card shows the tagline and the eight anomaly names.
+- `og:`/`twitter:` titles use the page title plus " | Anomaly Zoo"; descriptions are the scenario story (anomaly pages) or the descriptions above; image alt text "<page title>: Anomaly Zoo".
+- Nav entry "Playground".

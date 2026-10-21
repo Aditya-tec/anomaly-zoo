@@ -2,7 +2,7 @@ import { expect, test, type Page } from "@playwright/test";
 import { expectClean, watchPage } from "./helpers";
 
 const WIDTHS = [320, 360, 375, 414, 640, 768, 1024, 1280, 1440];
-const PAGES = ["/", "/anomalies/read-only-anomaly?level=SER&step=8", "/anomalies/lost-update?level=RC&step=9", "/about"];
+const PAGES = ["/", "/anomalies/read-only-anomaly?level=SER&step=8", "/anomalies/lost-update?level=RC&step=9", "/about", "/playground"];
 
 async function noHorizontalScroll(page: Page, label: string) {
   const m = await page.evaluate(() => {
@@ -81,7 +81,7 @@ test("timeline: swimlanes on desktop, one chronological list with transaction ch
 test("touch targets are at least 44 x 44 px on a phone and on desktop", async ({ page }) => {
   for (const vp of [{ width: 375, height: 800 }, { width: 1280, height: 900 }]) {
     await page.setViewportSize(vp);
-    for (const url of ["/", "/anomalies/write-skew?level=SI", "/about"]) {
+    for (const url of ["/", "/anomalies/write-skew?level=SI", "/about", "/playground"]) {
       await page.goto(url);
       if (url.startsWith("/anomalies")) {
         await expect(page.getByTestId("viewer")).toHaveAttribute("data-ready", "true");
@@ -89,7 +89,7 @@ test("touch targets are at least 44 x 44 px on a phone and on desktop", async ({
       }
       const small = await page.evaluate(() => {
         const out: string[] = [];
-        const sel = 'button, [role="radiogroup"] label, header a, footer a, main a.map-cell, main a[href^="/"]:not(.map-cell)';
+        const sel = 'button, select, summary, input:not([type="radio"]), [role="radiogroup"] label, header a, footer a, main a.map-cell, main a[href^="/"]:not(.map-cell)';
         for (const el of document.querySelectorAll<HTMLElement>(sel)) {
           const r = el.getBoundingClientRect();
           const cs = getComputedStyle(el);
@@ -136,4 +136,21 @@ test("pages stay clean (no console errors) at phone size too", async ({ page }) 
   await page.setViewportSize({ width: 320, height: 640 });
   for (const url of PAGES) await page.goto(url);
   await expectClean(page, w);
+});
+
+test("the playground works on a phone: run, results, errors and share without horizontal scrolling", async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 640 });
+  await page.goto("/playground");
+  await noHorizontalScroll(page, "playground at 320px");
+  await page.getByTestId("run").click();
+  await expect(page.getByTestId("result-banner")).toBeVisible();
+  await noHorizontalScroll(page, "playground with results at 320px");
+  await page.getByTestId("share").click();
+  await noHorizontalScroll(page, "playground with the share box at 320px");
+  await page.getByTestId("source").fill("scenario x\nschedule:\n  T1 FROB\n");
+  await page.getByTestId("run").click();
+  await expect(page.getByTestId("source-errors")).toBeVisible();
+  await noHorizontalScroll(page, "playground with errors at 320px");
+  await page.setViewportSize({ width: 640, height: 480 }); // 200 % zoom
+  await noHorizontalScroll(page, "playground at 200% zoom");
 });

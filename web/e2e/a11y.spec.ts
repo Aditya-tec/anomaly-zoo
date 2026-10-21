@@ -63,6 +63,37 @@ for (const slug of SLUGS) {
     }
   });
 }
+for (const scheme of ["light", "dark"] as const) {
+  test(`axe: the playground with results, with source errors and with a refused link (${scheme})`, async ({ page }) => {
+    await page.emulateMedia({ colorScheme: scheme, reducedMotion: "reduce" });
+    await page.goto("/playground");
+    await page.getByTestId("run").click();
+    await expect(page.getByTestId("result-banner")).toBeVisible();
+    await page.getByRole("button", { name: "Next" }).click();
+    await scan(page, `playground with results (${scheme})`);
+
+    await page.getByTestId("source").fill("scenario x\nschedule:\n  T1 FROB\n");
+    await page.getByTestId("run").click();
+    await expect(page.getByTestId("source-errors")).toBeVisible();
+    await scan(page, `playground with errors (${scheme})`);
+
+    await page.getByTestId("share").click();
+    await scan(page, `playground with share box (${scheme})`);
+
+    await page.goto("about:blank");
+    await page.goto("/playground#s=%25%25");
+    await expect(page.getByTestId("link-error")).toBeVisible();
+    await scan(page, `playground with a refused link (${scheme})`);
+  });
+
+  test(`axe: a share-image render target (${scheme})`, async ({ page }) => {
+    await page.emulateMedia({ colorScheme: scheme });
+    await page.goto("/og/write-skew");
+    await expect(page.getByTestId("og-card")).toBeVisible();
+    await scan(page, `/og/write-skew (${scheme})`);
+  });
+}
+
 test("axe: with the compare strip collapsed and the store drawer open on a phone", async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 800 });
   await page.goto("/anomalies/read-only-anomaly?level=SER&step=6");

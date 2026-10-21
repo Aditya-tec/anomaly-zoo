@@ -4,14 +4,14 @@ Watch database isolation bugs happen, then turn them off.
 
 Anomaly Zoo is a from-scratch transactional engine (multi-version concurrency control, written in Go with only the standard library) that runs scripted two- and three-transaction schedules at four isolation levels: Read Uncommitted, Read Committed, Snapshot Isolation and Serializable. You step through a schedule, see a bug happen (a dirty read, a lost update, write skew), switch the level, replay, and see the mechanism that prevents it.
 
-> **Status: engine and static website.** The engine, command line, WASM build, and a static website (habitat map, step-through pages for eight anomalies, About) exist. The in-browser **playground is not built yet**, and there is **no PostgreSQL comparison yet**. See [Status](#status).
+> **Status: engine and static website.** The engine, command line, WASM build, and a static website (habitat map, step-through pages for eight anomalies, About) exist. There is an in-browser **playground** (the engine runs as WebAssembly in a worker, loaded only when you use it), but **no PostgreSQL comparison yet**. See [Status](#status).
 
 ## What exists today
 
 - `engine/`: DSL parser, MVCC store, transaction manager (write locks, deadlock detection, first-updater-wins), a simplified Serializable Snapshot Isolation tracker, a serializability oracle, and a trace format with a JSON Schema.
 - `scenarios/`: eight scenarios (dirty read, non-repeatable read, phantom, lost update, read skew, write skew, read-only anomaly, deadlock) and `expected.json`, the result matrix the engine is checked against.
 - `cmd/azoo`: `run`, `matrix`, `traces`, `gen`, `version`.
-- `web/public/engine`: the engine compiled to WebAssembly, a worker and a client (the P6 pages do not load them; the playground in P7 will).
+- `web/public/engine`: the engine compiled to WebAssembly, a worker and a client (only the playground and the Re-run button load them, and only after you use them).
 - `web/`: the website, a static Next.js export that replays the engine's pre-generated traces (no engine runs in the browser on these pages). Tests: unit, Playwright in Chromium/Firefox/WebKit, axe, Lighthouse.
 - `spike/`: a throwaway Next.js page used to prove that the worker, the WASM and a strict Content-Security-Policy work together on a static host. It is not the site.
 
@@ -60,7 +60,7 @@ Your own database's documentation is the authority on how it behaves.
 | P1 DSL, P2-P4 engine (RU, RC, SI, SER), P5 CLI/traces/WASM | done, tests recorded in docs/PROGRESS.md |
 | P0 hosting spike (Vercel preview, CSP in three browsers, CI) | files written; hosted checks pending, see docs/P0-CHECKLIST.md |
 | P6 website: habitat map, anomaly pages, About | built and tested locally; Vercel deployment and CI results pending |
-| P7 playground | not started |
+| P7 playground, re-run in the browser, share links, share images | built and tested locally; CI and Vercel results pending |
 | P8 PostgreSQL comparison | not started |
 | P9-P10 hardening and launch | not started |
 

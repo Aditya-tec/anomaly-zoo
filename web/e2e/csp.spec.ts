@@ -73,3 +73,23 @@ test("the CSP is enforced: an unhashed inline script is blocked and reported", a
   });
   expect(handler).toBe(false);
 });
+
+// With the WASM engine loaded (worker + module import + WebAssembly under the
+// worker's header CSP), nothing may be refused and nothing may log an error.
+test("no CSP violations or console errors with the engine loaded, in the playground and on an anomaly page", async ({ page }) => {
+  const w = await watchPage(page);
+  await page.goto("/playground");
+  await page.getByTestId("run").click();
+  await expect(page.getByTestId("result-banner")).toBeVisible();
+  await page.getByTestId("share").click();
+  await page.locator('label:has([data-testid="level-SER"])').click();
+  await page.getByRole("button", { name: "Next" }).click();
+  await page.getByTestId("source").fill("scenario x\nschedule:\n  T1 FROB\n");
+  await page.getByTestId("run").click();
+  await expect(page.getByTestId("source-errors")).toBeVisible();
+
+  await page.goto("/anomalies/lost-update");
+  await page.getByTestId("rerun-button").click();
+  await expect(page.getByTestId("rerun-identical")).toBeVisible({ timeout: 30_000 });
+  await expectClean(page, w);
+});

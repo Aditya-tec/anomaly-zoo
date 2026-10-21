@@ -4,7 +4,7 @@ import { expect, test } from "@playwright/test";
 // even if everything looks rendered. This test navigates repeatedly in every
 // browser and, if `load` is late, reports exactly which requests were still
 // pending, so a hung request is visible instead of a bare timeout.
-for (const path of ["/", "/anomalies/write-skew", "/about"]) {
+for (const path of ["/", "/anomalies/write-skew", "/about", "/playground"]) {
   test(`the load event fires within 10 s, every time: ${path}`, async ({ browser }) => {
     for (let i = 0; i < 6; i++) {
       const context = await browser.newContext();

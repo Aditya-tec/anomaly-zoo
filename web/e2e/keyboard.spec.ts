@@ -85,3 +85,22 @@ test("the timeline and the level radios are reachable and operable without a mou
   await tabTo(page, '[data-testid="timeline"]'); // scrollable region is focusable
   await expect(page.getByTestId("timeline")).toBeFocused();
 });
+
+test("playground by keyboard: reach the editor, run with Ctrl/Cmd+Enter, reach and use an error", async ({ page }) => {
+  await page.goto("/playground");
+  await expect(page.getByTestId("run")).toBeVisible();
+  await tabTo(page, '[data-testid="source"]');
+  await page.keyboard.press("Control+A");
+  await page.keyboard.type("scenario x\nschedule:\n  T1 BEGIN\n  T1 FROB\n  T1 COMMIT\n");
+  await page.keyboard.press("ControlOrMeta+Enter");
+  await expect(page.getByTestId("source-errors")).toBeVisible();
+  await tabTo(page, '[data-testid="error-line"]');
+  await page.keyboard.press("Enter");
+  await expect(page.getByTestId("source")).toBeFocused();
+  await page.keyboard.press("Control+A");
+  await page.keyboard.type("scenario x\nschedule:\n  T1 BEGIN\n  T1 COMMIT\n");
+  await page.keyboard.press("ControlOrMeta+Enter");
+  await expect(page.getByTestId("result-banner")).toBeVisible();
+  // The level radios and step buttons are reachable after the editor.
+  await tabTo(page, '[data-testid="level-RU"], [data-testid="level-RC"], [data-testid="level-SI"], [data-testid="level-SER"]');
+});
