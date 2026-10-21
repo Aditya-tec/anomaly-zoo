@@ -69,7 +69,17 @@ export function checkRunAll(x: unknown): RunAllResult {
 /** Runs the scenario at all four levels in one worker request. */
 export async function runAll(source: string): Promise<RunAllResult> {
   const client = await loadClient();
-  return checkRunAll(await client.runAll(source));
+  try {
+    return checkRunAll(await client.runAll(source));
+  } catch (e) {
+    // A timeout already restarts the worker inside the client. A failed load leaves a
+    // worker that would repeat its error forever, so drop it: the next run starts fresh.
+    if (classifyEngineError(e).kind === "load") {
+      client.terminate();
+      clientPromise = null;
+    }
+    throw e;
+  }
 }
 
 export type EngineProblem = { kind: "timeout" | "load" | "other"; message: string };

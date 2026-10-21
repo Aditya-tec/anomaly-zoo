@@ -15,7 +15,8 @@
     "size": "node scripts/size-gate.mjs",
     "serve": "node scripts/serve.mjs",
     "e2e": "playwright test",
-    "lighthouse": "node scripts/lighthouse-check.mjs"
+    "lighthouse": "node scripts/lighthouse-check.mjs",
+    "og": "node scripts/gen-og.mjs"
   },
   "dependencies": {
     "next": "16.4.2",

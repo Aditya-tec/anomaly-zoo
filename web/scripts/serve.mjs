@@ -26,7 +26,7 @@ const omitCoopFor = process.env.SERVE_OMIT_COOP_FOR_UA ? new RegExp(process.env.
 const MIME = {
   ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".mjs": "text/javascript; charset=utf-8",
   ".json": "application/json", ".wasm": "application/wasm", ".css": "text/css; charset=utf-8",
-  ".txt": "text/plain; charset=utf-8", ".svg": "image/svg+xml", ".ico": "image/x-icon", ".map": "application/json",
+  ".txt": "text/plain; charset=utf-8", ".svg": "image/svg+xml", ".ico": "image/x-icon", ".map": "application/json", ".png": "image/png", ".jpg": "image/jpeg", ".webp": "image/webp",
 };
 
 export function headersFor(path) {

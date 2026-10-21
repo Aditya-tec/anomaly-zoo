@@ -1,13 +1,14 @@
 import type { Metadata } from "next";
 import { loadEngineInfo } from "@/lib/data";
 import { SHOW_CONFORMANCE_SECTION } from "@/lib/site";
+import { pageMetadata } from "@/lib/seo";
 import { LEVELS, LEVEL_DEFINITIONS, LEVEL_NAMES } from "@/lib/levels";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: "About",
   description: "How Anomaly Zoo works, what it can and cannot tell you, and what it does not collect.",
-  alternates: { canonical: "/about" },
-};
+  path: "/about",
+});
 
 // Limits, from spec §13.3. Item 3 and item 4 are reworded to drop statements
 // about PostgreSQL that are not yet verified; see docs/COPY-TODO.md.

@@ -12,7 +12,7 @@ import * as chromeLauncher from "chrome-launcher";
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const PORT = 4173;
 const BASE = `http://127.0.0.1:${PORT}`;
-const URLS = ["/", "/anomalies/write-skew"];
+const URLS = ["/", "/anomalies/write-skew", "/playground", "/about"];
 const RUNS = 3;
 const BUDGET = { performance: 0.9, accessibility: 0.95, "best-practices": 0.95, seo: 0.95 };
 

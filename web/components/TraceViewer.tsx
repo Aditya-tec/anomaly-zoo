@@ -18,6 +18,8 @@ import { VerdictPanel } from "./VerdictPanel";
 interface Props {
   traces: Record<Level, Trace>;
   defaultLevel: Level;
+  /** Mirror level and step in ?level=&step= (anomaly pages). Off in the playground, whose URL is the #s= fragment. */
+  syncUrl?: boolean;
 }
 
 type Msg = { a: StepperAction; max: number };
@@ -29,10 +31,10 @@ function isTypingTarget(t: EventTarget | null): boolean {
   return t.isContentEditable || t instanceof HTMLInputElement || t instanceof HTMLTextAreaElement || t instanceof HTMLSelectElement || t instanceof HTMLAnchorElement;
 }
 
-export function AnomalyViewer({ traces, defaultLevel }: Props) {
+export function TraceViewer({ traces, defaultLevel, syncUrl = true }: Props) {
   const [level, setLevel] = useState<Level>(defaultLevel);
   const [stepper, dispatch] = useReducer(reduce, { step: 0, playing: false });
-  const [urlReady, setUrlReady] = useState(false);
+  const [urlReady, setUrlReady] = useState(!syncUrl);
 
   const trace = traces[level];
   const max = trace.steps.length;
@@ -41,18 +43,19 @@ export function AnomalyViewer({ traces, defaultLevel }: Props) {
 
   // URL -> state, once, after mount (keeps the static HTML identical for everyone).
   useEffect(() => {
+    if (!syncUrl) return;
     const p = parseViewParams(window.location.search, { level: defaultLevel, step: 0 }, (l) => traces[l].steps.length);
     setLevel(p.level);
     dispatch({ a: { type: "goto", step: p.step }, max: traces[p.level].steps.length });
     setUrlReady(true);
-  }, [defaultLevel, traces]);
+  }, [defaultLevel, traces, syncUrl]);
 
   // state -> URL
   useEffect(() => {
-    if (!urlReady) return;
+    if (!syncUrl || !urlReady) return;
     const url = `${window.location.pathname}${formatViewParams({ level, step: stepper.step })}${window.location.hash}`;
     window.history.replaceState(window.history.state, "", url);
-  }, [urlReady, level, stepper.step]);
+  }, [syncUrl, urlReady, level, stepper.step]);
 
   // Autoplay
   useEffect(() => {

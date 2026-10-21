@@ -17,7 +17,7 @@ const waitSec = waitIdx >= 0 ? Number(args[waitIdx + 1]) : 0;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 const SLUGS = ["dirty-read", "non-repeatable-read", "phantom", "lost-update", "read-skew", "write-skew", "read-only-anomaly", "deadlock"];
-const PAGES = ["/", "/about", ...SLUGS.map((s) => `/anomalies/${s}`)];
+const PAGES = ["/", "/about", "/playground", ...SLUGS.map((s) => `/anomalies/${s}`)];
 
 const problems = [];
 const check = (ok, msg) => { if (!ok) { console.log(`  FAIL  ${msg}`); problems.push(msg); } return ok; };
@@ -61,6 +61,24 @@ const nfHtml = await notFound.text();
 check(notFound.status === 404, `404 page: HTTP ${notFound.status}`);
 check(/http-equiv="Content-Security-Policy"/i.test(nfHtml), "404 page: CSP <meta> missing");
 console.log(`${notFound.status === 404 ? "PASS" : "FAIL"}  404 page`);
+
+// ---- share images: every page's og:image resolves to a 1200x630 PNG of at most 100 KB ----
+for (const path of PAGES) {
+  const html = await (await fetch(base + path, { cache: "no-store" })).text();
+  const m = /<meta property="og:image" content="([^"]+)"/.exec(html);
+  if (!check(!!m, `${path}: no og:image meta`)) continue;
+  check(/<meta name="twitter:card" content="summary_large_image"/.test(html), `${path}: no twitter:card`);
+  const url = new URL(m[1], base);
+  const img = await fetch(base + url.pathname, { cache: "no-store" });
+  const bytes = Buffer.from(await img.arrayBuffer());
+  const ok = img.status === 200 && /image\/png/.test(img.headers.get("content-type") || "") && bytes.length <= 100 * 1024 && bytes.readUInt32BE(16) === 1200 && bytes.readUInt32BE(20) === 630;
+  check(ok, `${path}: og:image ${url.pathname} is not a 1200x630 PNG <= 100 KB (status ${img.status}, ${bytes.length} B)`);
+}
+const ogPage = await (await fetch(base + "/og/write-skew", { cache: "no-store" })).text();
+check(/<meta name="robots" content="noindex/.test(ogPage), "/og/write-skew is not marked noindex");
+const sitemap = await (await fetch(base + "/sitemap.xml", { cache: "no-store" })).text();
+check(!sitemap.includes("/og/") && sitemap.includes("/playground"), "sitemap lists /playground and no /og/ render target");
+console.log("done  share images, noindex render targets, sitemap");
 
 // ---- headers -------------------------------------------------------------------
 const GENERIC = {

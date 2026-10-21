@@ -1,0 +1,11 @@
+{
+  "dirty-read": "6a69bcdd901601b7e58f63c63d2b35ec037a3f125bfb9d92cd954134a3a13812",
+  "non-repeatable-read": "9a35dce2b0649a2330ad962010a3534a1d059fe53536df5107cbe5b6157c1219",
+  "phantom": "0fcea325d13caa4c4df32f18a5fee0950a2801e64a825f7c5ef08ac92a8e267f",
+  "lost-update": "db3f847f4a6b98934e9173461bf63e9b2dcfe21d915cdf7544f46f5a6239bb38",
+  "read-skew": "f48790d0e4351c8e7d33d9b9c7b2309bb36b3afd1eed9da488dd2473b38ac7ef",
+  "write-skew": "96f57fd64145739d4c1aabcdc848668bffad83f51ca239b1a76c5ddcff7cd504",
+  "read-only-anomaly": "3f83f99cb0e329d5e2263afe3782e9c9fe51e92bfe1db25339cf609af5b26ec0",
+  "deadlock": "27c4710e05bbed00c829aa9718f949434b35f27a7ade1d5a491cb61a34c7f818",
+  "zoo": "5fce3fe998bcb3d3fe2eb34b37eb1f137b16a896fe3aebc2c7b92eeea8847113"
+}

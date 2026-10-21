@@ -330,6 +330,72 @@ a {
 .mini li[data-state="future"] { background: var(--surface-2); color: var(--fg-muted); border-left-style: dotted; }
 .mini li[data-state="current"] { box-shadow: 0 0 0 2px var(--accent); }
 
+/* ---------- playground editor: a textarea with a CSS-counter line-number gutter ---------- */
+.editor { display: flex; align-items: stretch; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); overflow: hidden; }
+.editor-gutter {
+  counter-reset: line;
+  flex: none;
+  min-width: 3rem;
+  height: 20rem;
+  overflow: hidden;
+  padding: 0.5rem 0.5rem;
+  text-align: right;
+  background: var(--surface-2);
+  color: var(--fg-muted);
+  font: 0.85rem/1.5rem var(--font-mono);
+  user-select: none;
+}
+.editor-gutter span { display: block; height: 1.5rem; counter-increment: line; }
+.editor-gutter span::before { content: counter(line); }
+.editor-input {
+  flex: 1;
+  min-width: 0;
+  height: 20rem;
+  padding: 0.5rem;
+  border: 0;
+  background: transparent;
+  color: var(--fg);
+  font: 0.85rem/1.5rem var(--font-mono);
+  white-space: pre;
+  overflow: auto;
+  tab-size: 2;
+  resize: none;
+}
+.editor-input:focus-visible { outline-offset: -3px; }
+
+/* ---------- share image render target (/og/[slug]); fixed light palette, independent of the visitor's theme ---------- */
+.og-card {
+  --bg: #f6f4ee; --surface: #fdfcf9; --surface-2: #ece8dd; --border: #8a8474; --fg: #1c1b18; --fg-muted: #57534a;
+  --good: #1a6a3c; --bad: #a3261f; --accent: #1f5f53;
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 1000;
+  box-sizing: border-box;
+  width: 1200px;
+  height: 630px;
+  padding: 56px 64px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  background: var(--bg);
+  color: var(--fg);
+  border-left: 16px solid var(--accent);
+  font-family: var(--font-sans);
+  overflow: hidden;
+}
+.og-top { display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 26px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--fg-muted); }
+.og-brand { color: var(--accent); font-weight: 700; }
+.og-title { margin: 0; font-size: 104px; line-height: 1.02; letter-spacing: -0.02em; font-weight: 800; }
+.og-sub { margin: 14px 0 0; font-size: 40px; line-height: 1.25; color: var(--fg-muted); max-width: 980px; text-wrap: balance; }
+.og-levels { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; list-style: none; margin: 0; padding: 0; }
+.og-level { display: flex; flex-direction: column; gap: 4px; padding: 16px 20px; background: var(--surface); border: 2px solid var(--border); border-left: 10px solid var(--tone); border-radius: 12px; }
+.og-code { font-family: var(--font-mono); font-size: 40px; font-weight: 800; }
+.og-name { font-size: 22px; color: var(--fg-muted); }
+.og-outcome { font-size: 32px; font-weight: 700; color: var(--tone); }
+.og-names { display: flex; flex-wrap: wrap; gap: 12px 16px; list-style: none; margin: 0; padding: 0; }
+.og-names li { padding: 10px 20px; background: var(--surface); border: 2px solid var(--border); border-radius: 999px; font-size: 28px; font-weight: 600; }
+
 /* ---------- motion ---------- */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }

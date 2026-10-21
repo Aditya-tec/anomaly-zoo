@@ -2,13 +2,15 @@ import type { Metadata } from "next";
 import { HabitatMap } from "@/components/HabitatMap";
 import { loadManifest } from "@/lib/data";
 import { buildHomeData } from "@/lib/home";
+import { pageMetadata } from "@/lib/seo";
 import { SITE_NAME, TAGLINE } from "@/lib/site";
 
-export const metadata: Metadata = {
-  title: { absolute: `${SITE_NAME}: ${TAGLINE}` },
+export const metadata: Metadata = pageMetadata({
+  title: `${SITE_NAME}: ${TAGLINE}`,
+  absoluteTitle: true,
   description: "An interactive museum of database concurrency bugs, replayed step by step at four isolation levels.",
-  alternates: { canonical: "/" },
-};
+  path: "/",
+});
 
 export default function Home() {
   const data = buildHomeData(loadManifest());
