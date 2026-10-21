@@ -98,7 +98,7 @@ Every sentence below is generated from `web/public/conformance.json`; it contain
 - Read Uncommitted: exactly "PostgreSQL has no read-uncommitted" (the task's wording); shown only if the harness probe saw no dirty read when asking PostgreSQL for READ UNCOMMITTED.
 - **[claim-check]** The badge says nothing about other databases or other PostgreSQL versions; the version printed is the one the harness ran against.
 
-### 6b. About page: "Comparison with a real database" (`components/ConformanceSection.tsx`)
+### 6b. About page: "Comparison with PostgreSQL" (`components/ConformanceSection.tsx`)
 - Intro: "The same schedules were run on this engine (version X) and on PostgreSQL Y. Read Committed, Snapshot Isolation (run as PostgreSQL's Repeatable Read) and Serializable are compared: the N canned scenarios first, then M random schedules per level (seeds A to B, no DELETE). Every mismatch is re-run 5 times on PostgreSQL before it is classified."
 - Canned: "The outcome is the same on both sides in a of b scenario-and-level pairs; c of them are identical statement by statement, in the final state and in which transactions aborted." + table with "Engine <glyph word>, PostgreSQL <glyph word>" and "(differs)" when they do not match.
 - Random: table columns "Schedules", "Compared strictly", "Identical", "Identical when no two statements were blocked at once", "Deadlock: same outcome class".

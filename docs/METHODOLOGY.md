@@ -1,6 +1,55 @@
-# Methodology: comparing the engine with PostgreSQL
+# Methodology
 
-Spec §9.4. This document says exactly how the comparison is made, how mismatches are classified, and documents every divergence the comparison found. Everything quantitative lives in `web/public/conformance.json` (written by the harness) and is rendered on the About page; this file does not repeat numbers that the report holds, except in the "Results of the accepted run" section, which is a dated copy.
+How Anomaly Zoo works, how it is checked, and exactly where it differs from PostgreSQL. Everything quantitative is a recorded number: the PostgreSQL comparison lives in `web/public/conformance.json` (written by the harness, rendered on the About page) and the test runs are logged in `docs/PROGRESS.md`. This file explains the method and does not invent figures; where it quotes one it names the source.
+
+Contents: [Engine semantics](#engine-semantics-summary) · [Oracle](#the-serializability-oracle) · [Property tests](#property-tests) · [Mutation checks](#mutation-checks) · [Golden traces and the matrix](#golden-traces-and-the-matrix) · [Conformance against PostgreSQL](#conformance-against-postgresql) (the sections from "What is compared" down to "Divergences") · [Limits](#limits)
+
+## Engine semantics (summary)
+
+The engine is a deterministic, single-threaded simulation of a multi-version key-to-integer store, written in Go with only the standard library. A *schedule* is a script of steps (`BEGIN`, `READ`, `SCAN`, `PUT`, `DELETE`, `COMMIT`, `ABORT`, `NOTE`) by up to six transactions; the runner processes the steps in order and records one event per step in a trace. The full contract is `spec.md` section 4; the short version:
+
+* **Versions.** Every key has a chain of versions, each stamped with its writer and a commit timestamp (0 while uncommitted). A logical clock advances by one at each commit. A transaction always sees its own uncommitted writes.
+* **What a read sees.** *Read Uncommitted*: the newest version, including other transactions' uncommitted writes. *Read Committed*: the newest committed version as of the start of the statement. *Snapshot Isolation*: the newest version committed at or before the transaction's snapshot, which is taken at its first data operation (not at `BEGIN`). *Serializable* reads the same snapshot.
+* **Writes.** Every `PUT` and `DELETE` takes the key's write lock, including for keys that do not exist yet; reads never block. A statement that cannot get the lock is *blocked*, the schedule continues, and later steps of that transaction queue behind it. When the holder commits or aborts, blocked statements are retried in first-in-first-out order.
+* **First-updater-wins** (Snapshot Isolation and Serializable): a writer that gets a lock on a key whose newest committed version is newer than its snapshot is aborted (`abort_concurrent_update`). Read Committed has no such check, which is what allows lost updates there.
+* **Deadlocks.** When a blocked statement closes a wait-for cycle, the transaction that issued it is aborted (`abort_deadlock`). PostgreSQL's victim can differ, so the comparison uses the outcome class only for deadlock schedules.
+* **Serializable** is "SSI-lite", after the algorithm of Cahill, Röhm and Fekete as implemented in PostgreSQL by Ports and Grittner: it records read-write dependencies between concurrent transactions (key and key-prefix read locks), and aborts a transaction that becomes the pivot of a dangerous structure (`abort_dependencies`) at the statement that completes it, at commit, or at its next operation if it was only marked doomed. Simplifications: predicate locks are key-prefix only, there is no read-only optimisation, nothing is summarised or evicted.
+* **Determinism.** The same schedule always produces the same trace byte for byte; the trace carries a SHA-256 digest of its canonical JSON. The WebAssembly build produces the same digests as the native build (checked on all 32 canned traces and on random schedules, under Node).
+
+## The serializability oracle
+
+`engine/oracle` decides whether the committed transactions of a run are equivalent to *some* serial order. Given the setup state, each committed transaction's statements with the results they actually observed, and the final state, it tries every permutation of the committed transactions: it replays them one at a time on a fresh store, each atomically, and accepts an order only if every `READ` and `SCAN` returns exactly what was observed and the final state equals the observed final state. The verdict and the first accepting order are written into every trace. The oracle is checked by its own unit tests (write skew, the read-only anomaly and a lost update are rejected; serial, empty and delete/absent histories are accepted). It also includes a shrinker that deletes steps, transactions and keys from a failing schedule while the failure persists and prints the minimal `.azs`. The oracle is also what the conformance harness uses on PostgreSQL's histories.
+
+The oracle checks equivalence to a serial order on observed results; it is not a proof that the engine's Serializable level is correct, and the project does not claim that. What is claimed is the number of random schedules the engine's histories were checked on and how many the oracle rejected (see Property tests).
+
+## Property tests
+
+`engine/run` generates random schedules deterministically from a seed (a splitmix64 generator written in the repository so results do not depend on a Go release): 2 to 4 transactions, 3 to 8 operations each over the keys `p:1 p:2 p:3 q:1 q:2`, with prefix scans, about 5 % DELETEs, 20 % of transactions ending in `ABORT`, and a random interleaving. At each level the tests assert, on every schedule:
+
+| | Levels | Property |
+|---|---|---|
+| P1 | all | terminates, the trace validates against the JSON Schema, the digest is stable across two runs |
+| P2 | all | store invariants: chains ordered, at most one uncommitted version per key and it is last, none left at the end, locks empty at the end, clock equals commits plus one |
+| P3 | RC, SI, SER | no dirty reads |
+| P4 | SI, SER | repeatable reads (the same key or scan, read twice with no own write between, returns the same) |
+| P5 | SI, SER | no lost updates (no two concurrent committed transactions write the same key) |
+| P6 | SER | the oracle accepts every history of committed transactions |
+| P7 | SI, RC | vacuity guards: Snapshot Isolation does produce non-serializable histories and Read Committed does produce non-repeatable reads, otherwise the generator or the oracle would be broken |
+| P8 | all | native and WebAssembly digests agree |
+
+The default test run uses 20,000 schedules per level; a one-off local run used 200,000 Serializable schedules (seeds 1,000,000 to 1,199,999) with 0 oracle rejections (`docs/PROGRESS.md`, AC4.2). The `fuzz` workflow can repeat the 200,000-schedule campaign for every level; that run has not been done. A failing schedule is shrunk and saved under `engine/testdata/regressions/` and kept.
+
+## Mutation checks
+
+A passing test suite proves little if it could not fail, so `engine/ssi` has five switches (`ssi.Faults`), one per SSI rule: the three edge-creation rules, the commit-time check and the after-commit re-check. `TestMutationChecks` turns each off in turn and requires a test to fail. Disabling any of the three edge rules is caught by random or canned schedules and shrinks to an 8-step counterexample. Disabling the commit-time check or the after-commit re-check is *not* caught by random schedules: 200,000-schedule campaigns with each one switched off found 0 non-serializable histories (`docs/PROGRESS.md`, P4 follow-ups), which is evidence that those two rules are redundant for serializability in this model, not proof. They are kept as defence in depth, and targeted tests fail when either is removed.
+
+## Golden traces and the matrix
+
+The eight canned scenarios at four levels give 32 traces; they are stored byte for byte in `engine/testdata/golden/` and updated only with an explicit `-update` flag and a reviewed diff. `azoo matrix --check` recomputes the anomaly-by-level matrix by running the engine and compares it with `scenarios/expected.json` (outcome, serializability verdict, aborted transactions and mechanism). The website builds its map from these traces and never contains a hand-written outcome: a lint rule bans the outcome words outside one module, and tests build the map from fixture traces.
+
+## Conformance against PostgreSQL
+
+The remaining sections down to "Divergences" describe the PostgreSQL comparison (spec section 9.4): what is compared, how a schedule is executed, flake control, classification, the experiments behind each conclusion, and the divergences, two of which are recorded as "cause not yet established".
 
 ## What is compared
 
@@ -95,3 +144,15 @@ Listed in `conformance/divergences.json` (the source) and rendered on the About 
 | `ser-abort-earlier-statement` | SER | Same transaction aborted, one statement earlier in PostgreSQL | **cause not yet established.** It may be the same page-level locks, but the control cannot be run on this schedule. |
 
 The "engine aborts more than PostgreSQL" bucket (SER) contained, in the accepted run, only schedules with simultaneous blocking, where the cause is the wake-order difference above; none arose without it. If a future run (the nightly one) produces such a case without simultaneous blocking it appears as `unexplained` and the harness fails: it would need its own entry or an engine fix.
+
+## Limits
+
+These are the limits stated on the About page, with what backs the PostgreSQL clauses.
+
+1. **A key-to-integer model with prefix scans.** There is no SQL, no indexes, no durability and no query planner.
+2. **A deterministic, single-threaded simulation of interleavings, not real concurrency.** A schedule is a fixed script. This is the root of the first PostgreSQL divergence above: when one commit or abort releases several waiting transactions at once, PostgreSQL lets them run concurrently and the engine serves them one after another in arrival order.
+3. **Read Uncommitted is included to show dirty reads.** PostgreSQL has no read-uncommitted: when asked for `READ UNCOMMITTED` on the dirty-read schedule it showed no dirty read and produced the same history as `READ COMMITTED` (the probe in `conformance.json`, `readUncommitted`).
+4. **The Serializable level is simplified.** Its predicate locks are key-prefix only and it has no read-only optimisation. The comparison quantifies how its aborts differ from PostgreSQL's: PostgreSQL's own read locks are per index page, so on the compared schedules it aborted transactions the engine did not far more often than the reverse (counts in `conformance.json`, `random.SER`; causes in "Divergences").
+5. **Vendor behaviours differ.** This explains concepts and does not replace your database's documentation. Only PostgreSQL 16 was compared, at three of its isolation levels, on schedules without `DELETE`.
+
+What the numbers do not show: they are counts over generated schedules with two to four transactions and five keys, not a guarantee about any other workload. Passing an oracle on random schedules is evidence, not a proof of correctness.

@@ -1,70 +1,67 @@
 # Anomaly Zoo
 
-Watch database isolation bugs happen, then turn them off.
+Watch database isolation bugs happen. Then turn them off.
 
-Anomaly Zoo is a from-scratch transactional engine (multi-version concurrency control, written in Go with only the standard library) that runs scripted two- and three-transaction schedules at four isolation levels: Read Uncommitted, Read Committed, Snapshot Isolation and Serializable. You step through a schedule, see a bug happen (a dirty read, a lost update, write skew), switch the level, replay, and see the mechanism that prevents it.
+Anomaly Zoo is a from-scratch MVCC engine in Go (standard library only) that runs scripted schedules of two or three transactions at four isolation levels and records every step. You step through a schedule in your browser, watch a bug happen (a dirty read, a lost update, write skew), switch the level, and see the mechanism that prevents it.
 
-> **Status: engine and static website.** The engine, command line, WASM build, and a static website (habitat map, step-through pages for eight anomalies, About) exist. There is an in-browser **playground** (the engine runs as WebAssembly in a worker, loaded only when you use it), but **no PostgreSQL comparison yet**. See [Status](#status).
+<p align="center">
+  <img src="docs/launch/hero.gif" alt="Write skew at Snapshot Isolation leaves zero doctors on call; at Serializable the second transaction is aborted and the invariant holds" width="720"><br>
+  <sub>Write skew, Snapshot Isolation then Serializable (24 s). <a href="docs/launch/hero.mp4">MP4 version</a>. The clip is a recording of the site, with captions added by <a href="web/scripts/record-launch.mjs">the recording script</a>.</sub>
+</p>
 
-## What exists today
+**Site:** https://anomaly-zoo.vercel.app (runs entirely in your browser; static pages, no backend, no cookies, no analytics, no third-party requests).
 
-- `engine/`: DSL parser, MVCC store, transaction manager (write locks, deadlock detection, first-updater-wins), a simplified Serializable Snapshot Isolation tracker, a serializability oracle, and a trace format with a JSON Schema.
-- `scenarios/`: eight scenarios (dirty read, non-repeatable read, phantom, lost update, read skew, write skew, read-only anomaly, deadlock) and `expected.json`, the result matrix the engine is checked against.
-- `cmd/azoo`: `run`, `matrix`, `traces`, `gen`, `version`.
-- `web/public/engine`: the engine compiled to WebAssembly, a worker and a client (only the playground and the Re-run button load them, and only after you use them).
-- `web/`: the website, a static Next.js export that replays the engine's pre-generated traces (no engine runs in the browser on these pages). Tests: unit, Playwright in Chromium/Firefox/WebKit, axe, Lighthouse.
-- `spike/`: a throwaway Next.js page used to prove that the worker, the WASM and a strict Content-Security-Policy work together on a static host. It is not the site.
+## The habitat map
 
-## Try it
+Eight anomalies by four isolation levels. Every cell is computed by running the engine, and CI asserts the whole matrix against [`scenarios/expected.json`](scenarios/expected.json); no outcome is written by hand anywhere in the web app.
 
-Requires Go (the version in `go.mod`) and, for the browser-side checks, Node 22.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/launch/habitat-map-dark.png">
+  <img src="docs/launch/habitat-map-light.png" alt="The habitat map: eight anomalies in rows, four isolation levels in columns, each cell marked Occurs or Prevented" width="900">
+</picture>
 
-```
-go run ./cmd/azoo matrix scenarios --check
-go run ./cmd/azoo run scenarios/write-skew.azs --level SI
-go run ./cmd/azoo run scenarios/write-skew.azs --level SER
-go test ./...
-node --test scripts/engine.test.mjs
-```
+## Run it
 
-More commands (no `make` needed) are in [docs/DEV.md](docs/DEV.md).
+Requirements: Go (the version in `go.mod`), and Node 22 for the website and the browser-side checks. No other tools are needed; `make` is optional (Windows users can ignore it, every target is one plain command).
 
-## How it is checked
+| What | With make | Plain command (PowerShell and bash) |
+|---|---|---|
+| Check the anomaly matrix | `make matrix` | `go run ./cmd/azoo matrix scenarios --check` |
+| Run one scenario | | `go run ./cmd/azoo run scenarios/write-skew.azs --level SI` |
+| Go tests | `make test` | `go vet ./... ; go test ./...` |
+| Build the WebAssembly engine | `make wasm` | `go run ./tools/buildwasm` |
+| Website: install, build, serve | `make web` | `cd web; npm ci --ignore-scripts; npm run build; npm run serve` |
+| Website end-to-end tests | `make e2e` | `cd web; npx playwright install chromium firefox webkit; npx playwright test` |
+| Claims, URL and security checks | `make checks` | `node scripts/check-claims.mjs; node scripts/site-url.mjs --check; node scripts/verify-hardening.mjs` |
+| PostgreSQL comparison (needs a PostgreSQL 16 server) | `make conformance` | bash: `export CONFORMANCE_DATABASE_URL=postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable`; PowerShell: `$env:CONFORMANCE_DATABASE_URL='postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable'`; then `cd conformance; go run ./cmd/azoo-conformance -random 500` |
 
-Numbers below are from runs recorded in [docs/PROGRESS.md](docs/PROGRESS.md).
+More commands, including fuzzing and coverage, are in [docs/DEV.md](docs/DEV.md).
 
-- The matrix (8 scenarios x 4 levels) is computed by running the engine and compared with `scenarios/expected.json`; it is not hard-coded anywhere.
-- The Serializable level was checked against a serializability oracle on 20,000 random schedules per test run, and on 200,000 random schedules in a one-off local run: 0 histories rejected.
-- The same 200,000-schedule run was repeated twice with one SSI rule disabled each; neither found a non-serializable history, which is evidence those two rules are redundant for correctness, not proof.
-- Deliberately breaking each of five SSI rules makes a test fail (random schedules for three of them, targeted tests for the other two).
-- The WASM build is reproducible (two cold builds give the same SHA-256), and its trace digests equal the native ones for all 32 canned traces plus 400 random ones, checked under Node.
+## How it is verified
+
+Each figure below links to where it is recorded. The method is in [docs/METHODOLOGY.md](docs/METHODOLOGY.md).
+
+- **Oracle.** The engine's Serializable level was checked against a serializability oracle on 20,000 random schedules per level in every test run, and on 200,000 Serializable schedules in one local run: 0 histories rejected ([PROGRESS.md, AC4.2](docs/PROGRESS.md)). Passing random schedules against an oracle is evidence, not a proof that the level is correct. Deliberately switching off any of the three edge-creation rules of the Serializable level makes tests fail ([mutation checks](docs/METHODOLOGY.md#mutation-checks)).
+- **PostgreSQL.** Outcomes were compared with PostgreSQL 16.15 on the 8 canned scenarios and 500 random schedules per level at Read Committed, Snapshot Isolation (PostgreSQL's Repeatable Read) and Serializable ([conformance.json](web/public/conformance.json), method in [METHODOLOGY](docs/METHODOLOGY.md)). Statement results, final state and aborted transactions were identical on 415 of 434 schedules at Read Committed (95.6%) and 441 of 446 at Snapshot Isolation (98.9%). When no two statements were blocked at the same time they were identical on 345 of 345 and 351 of 351. At Serializable both sides produced serializable histories in 500 of 500 schedules, with the same set of aborted transactions in 91.8%.
+- **Differences are documented**, not hidden: there are 5, each with a minimal schedule under [`engine/testdata/regressions/`](engine/testdata/regressions/), and two of them are listed as "cause not yet established" ([METHODOLOGY, Divergences](docs/METHODOLOGY.md#divergences)).
+- **Reproducible engine build.** The WebAssembly engine is committed and CI rebuilds it from source and compares the hash; its trace digests equal the native ones on all 32 canned traces ([PROGRESS.md, P5](docs/PROGRESS.md)).
+- **Security checks** run in CI: vulnerability scans of both Go modules and the npm dependencies, a repository-controls check, CodeQL ([docs/SECURITY-CONTROLS.md](docs/SECURITY-CONTROLS.md)).
 
 ## Limitations
 
-Please read these before relying on anything here.
+1. A key-to-integer model with prefix scans; no SQL, indexes or durability.
+2. A deterministic single-threaded simulation of interleavings, not real concurrency.
+3. Read Uncommitted is included for teaching. PostgreSQL has no read-uncommitted: asked for it on the dirty-read schedule it showed no dirty read and the same history as Read Committed ([conformance.json](web/public/conformance.json)).
+4. The Serializable level is simplified: predicate locks are key-prefix only and there is no read-only optimisation. On the 500 Serializable schedules compared, it aborted more transactions than PostgreSQL in 3 and fewer in 28 ([conformance.json](web/public/conformance.json)); the causes are in [METHODOLOGY](docs/METHODOLOGY.md#divergences).
+5. Vendor behaviours differ; this explains concepts and does not replace your database's documentation. Only PostgreSQL 16 was compared, on schedules without DELETE.
 
-1. It is a **key-to-integer model with prefix scans**. There is no SQL, no indexes, no durability and no query planner.
-2. It is a **deterministic, single-threaded simulation of interleavings**, not real concurrency. A schedule is a fixed script; the engine does not find races by itself.
-3. **Read Uncommitted exists only to show dirty reads.** PostgreSQL has no equivalent (it treats Read Uncommitted as Read Committed; this is unverified here).
-4. **The Serializable level is "SSI-lite".** Predicate locks are key-prefix only, there is no read-only optimisation and nothing is summarised or evicted, so it can abort more transactions than a production database would. Passing random schedules against an oracle is evidence, not a proof of correctness.
-5. **No claim is made about any real database yet.** Comparison with PostgreSQL is planned (phase P8) and not done. Nothing here describes MySQL, Oracle or SQL Server.
-6. The WASM file is large: 1.43 MB gzip (about 1.04 MB brotli), mostly because Go's `encoding/json` pulls in `reflect`.
-7. Browser testing is automated (Playwright's Chromium, Firefox and WebKit, plus Chrome and Edge for the spike). Safari on macOS, real phones and a human screen-reader pass have not been tested.
+Browser testing is automated (Chromium, Firefox and WebKit through Playwright). Safari on macOS, real phones and a human screen-reader pass have not been done.
 
-Your own database's documentation is the authority on how it behaves.
+## More
 
-## Status
-
-| Phase | State |
-|---|---|
-| P1 DSL, P2-P4 engine (RU, RC, SI, SER), P5 CLI/traces/WASM | done, tests recorded in docs/PROGRESS.md |
-| P0 hosting spike (Vercel preview, CSP in three browsers, CI) | files written; hosted checks pending, see docs/P0-CHECKLIST.md |
-| P6 website: habitat map, anomaly pages, About | built and tested locally; Vercel deployment and CI results pending |
-| P7 playground, re-run in the browser, share links, share images | built and tested locally; CI and Vercel results pending |
-| P8 PostgreSQL comparison | not started |
-| P9-P10 hardening and launch | not started |
-
-The full plan is in [spec.md](spec.md).
+- [Changelog](CHANGELOG.md) · [Release checklist](docs/RELEASE-CHECKLIST.md) · [Decisions log](docs/DECISIONS.md) · [Progress and recorded runs](docs/PROGRESS.md) · [The full plan](spec.md)
+- Security: see [SECURITY.md](SECURITY.md) (private vulnerability reporting) and [docs/SECURITY-CONTROLS.md](docs/SECURITY-CONTROLS.md).
+- Third-party code and licenses: [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
 ## License
 

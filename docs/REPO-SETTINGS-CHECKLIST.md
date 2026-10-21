@@ -20,3 +20,10 @@ These controls live in GitHub's and Vercel's settings, not in the repository, so
 ## What the repository itself already checks
 
 `node scripts/verify-hardening.mjs` (run in CI by the `security` job) verifies, from the files: pinned Actions, `permissions: {}`, no `pull_request_target`, no secrets, no script injection, `.npmrc`, dependency counts and exact versions, the Dependabot and CodeQL configuration, the policy files, the response headers in `web/vercel.json`, and the absence of HTML sinks and third-party URLs in the web source. It prints one line per control. It cannot see anything in the tables above.
+
+## Repository description, website and topics (P10 suggestions; apply them yourself)
+
+| # | Setting | Click path | Suggested value | How you verify it |
+|---|---|---|---|---|
+| 11 | **Description, website, topics** | Repository home page → the gear icon next to **About** | Description: `Watch database isolation anomalies happen step by step. A from-scratch MVCC engine in Go that runs in your browser, compared with PostgreSQL on random schedules.` Website: the production URL (`SITE_URL` in `web/lib/site.ts`). Topics: `mvcc`, `transactions`, `isolation-levels`, `snapshot-isolation`, `serializability`, `postgresql`, `database`, `golang`, `webassembly`, `nextjs`, `education`, `visualization` | `gh repo view Aditya-tec/anomaly-zoo --json description,homepageUrl,repositoryTopics` shows them. Keep the description free of the phrases the claims policy bans (`node scripts/check-claims.mjs` does not read GitHub, so check it by eye) |
+| 12 | **Social preview image** | **Settings** → **General** → **Social preview** → **Edit** → upload `web/public/og/zoo.png` (1200 x 630) | The upload shows in the settings page; paste the repository URL into a chat or post draft to see the card (platform previews could not be tested from here) |
