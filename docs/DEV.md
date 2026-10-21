@@ -40,3 +40,14 @@ Run from `web/` after `npm ci --ignore-scripts`:
 | Check a running or deployed URL (CSP + headers on every page) | `node scripts/check-deployed.mjs https://<host>` |
 | Regenerate the 1200x630 share images (needs a built site and Chromium); a unit test fails if they are stale | `npm run build; npm run og` |
 | Refresh the traces the site reads | `go run ./cmd/azoo traces --out web/public/traces` (a Go test fails if they are stale) |
+## Hardening (P9)
+
+| Task | Command |
+|---|---|
+| Repository controls (pinned Actions, permissions, headers, policy files, ...) | `node scripts/verify-hardening.mjs` |
+| Regenerate / check the third-party notices (after `npm ci` in `web/`) | `node scripts/gen-third-party-notices.mjs` / `--check` |
+| Regenerate / check the timeline grid classes | `node scripts/gen-grid-css.mjs` / `--check` (run from `web/`) |
+| Vulnerability scans | `go install golang.org/x/vuln/cmd/govulncheck@v1.9.0`, then `govulncheck ./...` (also in `conformance/`); `npm audit --omit=dev --audit-level=high` in `web/` |
+| Engine coverage | `go test -short -coverprofile=c.out -coverpkg=./engine/... ./engine/...` then `go tool cover -func=c.out` (last line; the gate is 85 %) |
+| Fuzz | `go test -run '^$' -fuzz '^FuzzParse$' -fuzztime 5m ./engine/dsl` and `go test -run '^$' -fuzz '^FuzzRun$' -fuzztime 5m ./engine/run` |
+| Lint the workflows | `go install github.com/rhysd/actionlint/cmd/actionlint@latest`, then `actionlint .github/workflows/*.yml` |

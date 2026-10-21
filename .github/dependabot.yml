@@ -1,0 +1,22 @@
+# Weekly version updates for every ecosystem the repository uses (spec 10.5).
+# The root Go module has no dependencies (standard library only), but it is
+# listed so a future one would be covered. The conformance harness is a
+# separate Go module (pgx). npm lives in web/.
+version: 2
+updates:
+  - package-ecosystem: gomod
+    directory: /
+    schedule:
+      interval: weekly
+  - package-ecosystem: gomod
+    directory: /conformance
+    schedule:
+      interval: weekly
+  - package-ecosystem: npm
+    directory: /web
+    schedule:
+      interval: weekly
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly

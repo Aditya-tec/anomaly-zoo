@@ -56,6 +56,15 @@ jobs:
       - name: go test (full property runs, 20,000 schedules per level)
         run: go test -count=1 ./...
 
+      # AC9.2 / spec 11.1: coverage gate on the engine. Statement coverage over every
+      # engine package, counting what any engine test executes (-coverpkg).
+      - name: Coverage gate (engine, at least 85 percent)
+        run: |
+          go test -count=1 -short -coverprofile="$RUNNER_TEMP/cover.out" -coverpkg=./engine/... ./engine/... > /dev/null
+          total="$(go tool cover -func="$RUNNER_TEMP/cover.out" | awk '/^total:/ {gsub("%","",$NF); print $NF}')"
+          echo "engine statement coverage: $total%"
+          awk -v t="$total" 'BEGIN { exit !(t >= 85.0) }'
+
       # Release check (spec §9.4): the committed PostgreSQL report must describe
       # the engine that is being released.
       - name: conformance.json engineVersion equals azoo version
@@ -135,6 +144,61 @@ jobs:
           path: |
             ${{ runner.temp }}/conformance.json
             ${{ runner.temp }}/conformance-report.txt
+          retention-days: 30
+
+  security:
+    name: security
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+          cache: false
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: govulncheck (engine module and conformance module)
+        run: |
+          go install golang.org/x/vuln/cmd/govulncheck@v1.9.0
+          "$(go env GOPATH)/bin/govulncheck" ./...
+          (cd conformance && "$(go env GOPATH)/bin/govulncheck" ./...)
+
+      - name: Install web dependencies (lockfile only, no install scripts)
+        working-directory: web
+        run: npm ci --ignore-scripts
+
+      - name: npm audit, production dependencies, high and above (blocks)
+        working-directory: web
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: npm audit, all dependencies (report only)
+        working-directory: web
+        run: |
+          npm audit --json > "$RUNNER_TEMP/npm-audit-all.json" || true
+          node -e 'const a=require(process.argv[1]).metadata.vulnerabilities;console.log("all dependencies, vulnerabilities by severity:",JSON.stringify(a))' "$RUNNER_TEMP/npm-audit-all.json"
+
+      - name: THIRD_PARTY_NOTICES.md is current
+        run: node scripts/gen-third-party-notices.mjs --check
+
+      - name: Repository controls (pinned actions, permissions, headers, policy files, ...)
+        run: node scripts/verify-hardening.mjs
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: npm-audit-all-dependencies
+          path: ${{ runner.temp }}/npm-audit-all.json
           retention-days: 30
 
   web:
