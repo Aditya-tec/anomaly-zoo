@@ -2,7 +2,7 @@ module github.com/Aditya-tec/anomaly-zoo/conformance
 
 go 1.25.0
 
-toolchain go1.27.0
+toolchain go1.27.3
 
 require (
 	github.com/Aditya-tec/anomaly-zoo v0.0.0
@@ -12,7 +12,7 @@ require (
 require (
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect
-	golang.org/x/text v0.29.0 // indirect
+	golang.org/x/text v0.41.0 // indirect
 )
 
 // The harness drives the very engine packages in this repository.
