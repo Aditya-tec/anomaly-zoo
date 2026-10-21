@@ -194,6 +194,14 @@ jobs:
       - name: Repository controls (pinned actions, permissions, headers, policy files, ...)
         run: node scripts/verify-hardening.mjs
 
+      # Claims policy (spec 13.3): banned phrases, and every figure in the README, About page, COPY files and
+      # launch drafts must come from a recorded source. The URL must be written the same way everywhere.
+      - name: Claims policy and production-URL consistency
+        run: |
+          node scripts/check-claims.mjs
+          node --test scripts/check-claims.test.mjs
+          node scripts/site-url.mjs --check
+
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:

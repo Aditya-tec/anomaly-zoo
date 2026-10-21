@@ -1,0 +1,19 @@
+# Numbers that may appear in README, About page, COPY files and launch drafts without being a measurement.
+# Format: <number>   # why it is not a measurement.  Measured figures must come from conformance.json or the
+# recorded logs (docs/PROGRESS.md, docs/DECISIONS.md), never from this file.
+4096   # spec 4.10/7.6: share-link length limit (a limit, not a result)
+8192   # spec 4.10: source size limit in bytes (8 KB)
+8      # spec 4.10: 8 KB source limit; also "eight scenarios"
+200    # spec 4.10: maximum schedule steps
+64     # spec 4.10: maximum distinct keys
+80     # spec 10.4: title and invariant-name cap
+120    # spec 10.4: note cap
+400    # spec 10.4: story cap
+32     # spec 4.10: maximum key length / number of canned traces (4 levels x 8 scenarios)
+30     # spec 13.1: recording length, seconds
+20     # spec 13.1: recording length, seconds
+5      # spec 13.1: GIF size limit in MB; also "5 re-runs"
+22     # README: required Node major version (a requirement, not a result)
+16     # README: PostgreSQL major version the harness and CI use (a requirement, not a result)
+1080   # launch/README: carousel still width in pixels (an image format, not a result)
+1350   # launch/README: carousel still height in pixels (an image format, not a result)
