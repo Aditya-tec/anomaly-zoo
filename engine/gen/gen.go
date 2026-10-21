@@ -30,6 +30,10 @@ func (r *Rand) Intn(n int) int { return int(r.next() % uint64(n)) }
 type Config struct {
 	Txns int
 	Keys int
+	// NoDelete turns the ~5% of statements that would be DELETE into READs.
+	// Schedules differ from the default ones for the same seed; with the option
+	// off nothing changes (the random-digest fixture proves it).
+	NoDelete bool
 }
 
 var allKeys = []string{"p:1", "p:2", "p:3", "q:1", "q:2"}
@@ -94,7 +98,7 @@ func Generate(seed uint64, cfg Config) *dsl.Scenario {
 			name := fmt.Sprintf("v%d_%d", ti+1, oi)
 			roll := r.Intn(100)
 			switch {
-			case roll < 25 || roll >= 90:
+			case roll < 25 || roll >= 90 || (cfg.NoDelete && roll >= 85):
 				steps = append(steps, dsl.Step{Txn: id, Op: "READ", Key: keys[r.Intn(len(keys))], As: name})
 				vars = append(vars, binding{name: name})
 			case roll < 40:
