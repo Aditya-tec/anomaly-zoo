@@ -1,0 +1,15 @@
+scenario ser-disjoint-keys
+title "Serializable: two transactions on different keys"
+story "T1 reads a and writes b; T2 reads c and writes d. No key is shared, so this engine commits both. PostgreSQL aborts T2 at commit. After a single-key read its lock table (pg_locks) shows a page-level read lock on the key index, and the whole table is one page."
+setup:
+  PUT a = 1
+  PUT c = 1
+schedule:
+  T1 BEGIN
+  T2 BEGIN
+  T1 READ a AS x
+  T2 READ c AS y
+  T1 PUT b = 1
+  T2 PUT d = 1
+  T1 COMMIT
+  T2 COMMIT

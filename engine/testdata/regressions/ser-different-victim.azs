@@ -1,0 +1,15 @@
+scenario ser-different-victim
+title "Serializable: a different transaction is aborted"
+story "T1 reads p:3 (absent) and T3 writes q:2, different keys. This engine sees no dependency, so T2's write to q:1, which waits for T1, fails as a concurrent update once T1 commits. PostgreSQL aborts T1 at commit instead: its read locks are per index page, and p:3 and q:2 share one."
+schedule:
+  T3 BEGIN
+  T1 BEGIN
+  T1 PUT q:1 = 51
+  T1 READ p:3 AS v1_1
+  T3 PUT q:2 = 92
+  T3 COMMIT
+  T2 BEGIN
+  T2 SCAN q: AS v2_2
+  T2 PUT q:1 = 1
+  T1 COMMIT
+  T2 ABORT

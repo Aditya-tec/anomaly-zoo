@@ -1,0 +1,15 @@
+scenario released-waiters-interleave
+title "A released waiter races ahead of the next one"
+story "T3 waits for q:2 and T1 waits for p:2, both held by T2. When T2 aborts, this engine wakes T3 first and runs its queued statements, so T3 takes p:2 before T1 is woken. In PostgreSQL T1 took p:2 first in every run measured, which changes who waits for whom. Why PostgreSQL's order is skewed this way is not established."
+schedule:
+  T2 BEGIN
+  T1 BEGIN
+  T3 BEGIN
+  T2 PUT q:2 = 41
+  T3 PUT q:2 = 18
+  T2 PUT p:2 = 1
+  T3 PUT p:2 = 97
+  T3 COMMIT
+  T1 PUT p:2 = 16
+  T1 COMMIT
+  T2 ABORT

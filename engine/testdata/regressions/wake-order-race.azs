@@ -1,0 +1,15 @@
+scenario wake-order-race
+title "Two waiters released by one commit"
+story "T2 and T3 both wait for the key x that T1 holds. When T1 commits, this engine serves them in arrival order (T2, then T3), so T3's write is last. PostgreSQL lets both continue at once and either can write last."
+setup:
+  PUT other = 1
+schedule:
+  T1 BEGIN
+  T2 BEGIN
+  T3 BEGIN
+  T1 PUT x = 1
+  T2 PUT x = 2
+  T3 PUT x = 3
+  T1 COMMIT
+  T2 COMMIT
+  T3 COMMIT

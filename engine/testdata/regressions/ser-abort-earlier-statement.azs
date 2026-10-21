@@ -1,0 +1,16 @@
+scenario ser-abort-earlier-statement
+title "Serializable: the same transaction is aborted, one statement earlier"
+story "T3 and T1 end up depending on each other and T3 is the one that must go. This engine aborts T3 at its SCAN of q:. PostgreSQL aborts it one statement earlier, at the first read after T1 commits."
+setup:
+  PUT p:3 = 7
+schedule:
+  T3 BEGIN
+  T1 BEGIN
+  T3 PUT p:1 = 23
+  T3 READ q:2 AS v3_1
+  T1 PUT q:1 = 0
+  T1 SCAN p: AS v1_5
+  T1 COMMIT
+  T3 READ p:3 AS v3_5
+  T3 SCAN q: AS v3_6
+  T3 ABORT

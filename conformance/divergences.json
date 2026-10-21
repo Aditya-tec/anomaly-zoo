@@ -1,0 +1,52 @@
+[
+  {
+    "id": "wake-order-race",
+    "title": "Transactions released together are not served in arrival order",
+    "levels": ["RC"],
+    "cause": "This engine serves waiting transactions strictly in arrival order and lets each one run its queued statements before the next is woken. PostgreSQL does not: for the same schedule its result changes from run to run (in the smallest schedule either of the two waiting writers can end up writing last), so no single answer matches the engine every time.",
+    "causeEstablished": true,
+    "notes": "The same schedule with only one waiting transaction was identical to the engine in 100 of 100 runs at Read Committed, Snapshot Isolation and Serializable. The variation appears only when two statements are blocked at the same time.",
+    "signatures": ["RC:race/varies:*", "SI:race/varies:*", "SER:*:race/varies:*"],
+    "regression": "wake-order-race.azs"
+  },
+  {
+    "id": "released-waiters-interleave",
+    "title": "When one transaction ends, PostgreSQL gives a contested key to a different waiter than the engine, every time",
+    "levels": ["RC", "SI", "SER"],
+    "cause": "cause not yet established",
+    "causeEstablished": false,
+    "notes": "This engine wakes waiters one after another in arrival order and runs the woken transaction's queued statements before waking the next. In the smallest schedule PostgreSQL gave the contested key to the other waiter in every run measured (30 of 30 at each level). Why its order is fixed here, when it varies in the schedule above, is not established.",
+    "signatures": ["RC:race/fixed:*", "SI:race/fixed:*", "SER:*:race/fixed:*"],
+    "regression": "released-waiters-interleave.azs"
+  },
+  {
+    "id": "ser-disjoint-keys",
+    "title": "PostgreSQL aborts a Serializable transaction that shares no key with the others",
+    "levels": ["SER"],
+    "cause": "PostgreSQL keeps its Serializable read locks per index page, not per key. This table is a single page, so reading one key conflicts with writing any other key, and PostgreSQL aborts transactions that have nothing in common. This engine locks only the keys and key prefixes a transaction read, and commits both transactions in the smallest schedule.",
+    "causeEstablished": true,
+    "notes": "Measured: after a one-key read, PostgreSQL's lock table shows a page-level read lock on the key index (test TestSIReadLockGranularity). Control: with filler rows that put the keys on different index pages, PostgreSQL commits both transactions, as the engine does (test TestPageGranularityControl). In every random schedule of this kind the engine's own history is serializable by the oracle, and PostgreSQL's abort reasons are its read/write-dependency checks. Not every random schedule was reduced to the smallest form; the others are classified by the abort reason and the serializability check.",
+    "signatures": ["SER:fewer:*"],
+    "regression": "ser-disjoint-keys.azs"
+  },
+  {
+    "id": "ser-different-victim",
+    "title": "PostgreSQL aborts a different Serializable transaction than the engine",
+    "levels": ["SER"],
+    "cause": "The same page-level read locks: PostgreSQL finds a dependency between two transactions that read and wrote different keys on one page, so a different transaction is the one that must be aborted. The engine sees no such dependency and aborts another transaction for an ordinary reason (in the smallest schedule, a concurrent update).",
+    "causeEstablished": true,
+    "notes": "Control: with filler rows that put the keys on different index pages, PostgreSQL aborts the same transaction as the engine (test TestPageGranularityControl).",
+    "signatures": ["SER:same-count:*"],
+    "regression": "ser-different-victim.azs"
+  },
+  {
+    "id": "ser-abort-earlier-statement",
+    "title": "PostgreSQL aborts the same Serializable transaction at an earlier statement",
+    "levels": ["SER"],
+    "cause": "cause not yet established",
+    "causeEstablished": false,
+    "notes": "In the smallest schedule both systems abort T3, the engine at its SCAN of q: and PostgreSQL one statement earlier, at its first read after T1 commits (PostgreSQL's message: conflict out to pivot, during read). It may be related to the page-level read locks behind the two entries above, but this schedule could not be run with its keys on separate pages (its scans cover the prefixes where filler rows would have to go), so that is not shown.",
+    "signatures": ["SER:identical:*"],
+    "regression": "ser-abort-earlier-statement.azs"
+  }
+]
