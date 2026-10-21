@@ -9,6 +9,7 @@ import type { Level, Manifest, ManifestScenario, Trace } from "./types";
 import { LEVELS } from "./levels";
 import { parseManifest, parseTrace } from "./parse";
 import { orderScenarios } from "./home";
+import { parseConformance, type Conformance } from "./conformance";
 
 const PUBLIC = join(process.cwd(), "public");
 
@@ -70,4 +71,22 @@ export interface Example {
 
 export function loadExamples(): Example[] {
   return orderScenarios(loadManifest().scenarios).map((s) => ({ id: s.id, title: s.title, source: loadSource(s.id) }));
+}
+
+let conformanceCache: Conformance | null = null;
+
+/**
+ * The PostgreSQL conformance report. A missing, malformed or stale file fails
+ * the build: the report must describe the engine that is being shipped.
+ */
+export function loadConformance(): Conformance {
+  if (!conformanceCache) {
+    const conf = parseConformance(JSON.parse(readFileSync(join(PUBLIC, "conformance.json"), "utf8")));
+    const engine = loadEngineInfo();
+    if (conf.engineVersion !== engine.engineVersion) {
+      throw new Error(`conformance.json is for engine ${conf.engineVersion}, but the shipped engine is ${engine.engineVersion}: re-run the conformance harness`);
+    }
+    conformanceCache = conf;
+  }
+  return conformanceCache;
 }

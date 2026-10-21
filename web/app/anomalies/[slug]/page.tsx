@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { RerunPanel } from "@/components/RerunPanel";
 import { TraceViewer } from "@/components/TraceViewer";
-import { loadAllTraces, loadManifest, loadScenario, loadSource } from "@/lib/data";
+import { loadAllTraces, loadConformance, loadManifest, loadScenario, loadSource } from "@/lib/data";
+import { pgBadgesForScenario } from "@/lib/conformance";
 import { LEVELS } from "@/lib/levels";
 import { pageMetadata } from "@/lib/seo";
 import { encodeShare } from "@/lib/share";
@@ -51,7 +52,7 @@ export default async function AnomalyPage({ params }: Params) {
       </header>
 
       <div className="mt-8">
-        <TraceViewer traces={traces} defaultLevel={defaultLevelFor(scenario)} />
+        <TraceViewer traces={traces} defaultLevel={defaultLevelFor(scenario)} pg={pgBadgesForScenario(loadConformance(), slug)} />
       </div>
 
       <div className="mt-12 max-w-3xl">

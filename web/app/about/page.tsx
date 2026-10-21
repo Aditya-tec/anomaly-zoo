@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { loadEngineInfo } from "@/lib/data";
+import { ConformanceSection } from "@/components/ConformanceSection";
+import { loadConformance, loadEngineInfo } from "@/lib/data";
 import { SHOW_CONFORMANCE_SECTION } from "@/lib/site";
 import { pageMetadata } from "@/lib/seo";
 import { LEVELS, LEVEL_DEFINITIONS, LEVEL_NAMES } from "@/lib/levels";
@@ -22,6 +23,7 @@ const LIMITS: readonly string[] = [
 
 export default function AboutPage() {
   const engine = loadEngineInfo();
+  const conf = loadConformance();
   return (
     <main id="main" tabIndex={-1} className="mx-auto max-w-3xl px-4 py-8 sm:px-6">
       <h1 className="m-0 text-4xl font-bold">About Anomaly Zoo</h1>
@@ -56,14 +58,7 @@ export default function AboutPage() {
         </ol>
       </section>
 
-      {SHOW_CONFORMANCE_SECTION ? (
-        <section aria-labelledby="conf-h" className="mt-10">
-          <h2 id="conf-h" className="m-0 mb-2 text-2xl font-semibold">
-            Comparison with a real database
-          </h2>
-          <p>Reserved for the conformance report (phase P8).</p>
-        </section>
-      ) : null}
+      {SHOW_CONFORMANCE_SECTION ? <ConformanceSection conf={conf} /> : null}
 
       <section aria-labelledby="faq-h" className="mt-10">
         <h2 id="faq-h" className="m-0 mb-2 text-2xl font-semibold">

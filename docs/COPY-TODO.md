@@ -89,3 +89,22 @@ Legend: **[spec]** is taken from the spec verbatim or nearly so; **[mine]** is w
 - Card text: "ANOMALY ZOO", "anomaly-zoo.vercel.app", the anomaly name and the part of the scenario title after the colon, level code, level name, glyph + outcome word per level (from the data); the `zoo` card shows the tagline and the eight anomaly names.
 - `og:`/`twitter:` titles use the page title plus " | Anomaly Zoo"; descriptions are the scenario story (anomaly pages) or the descriptions above; image alt text "<page title>: Anomaly Zoo".
 - Nav entry "Playground".
+## P8 — copy that mentions PostgreSQL
+Every sentence below is generated from `web/public/conformance.json`; it contains no number or outcome typed by hand. Review the wording; the numbers cannot be edited without re-running the harness.
+
+### 6a. PostgreSQL badge on anomaly pages (`components/PgBadge.tsx`, text from `pgBadgeView` in `lib/outcomes.ts`)
+- Headline: "PostgreSQL <version> at <Level name>", preceded by glyph + outcome word taken from the PostgreSQL invariant result (same words as everywhere else).
+- Lines: "PostgreSQL aborted T2: <abort summary>." for each transaction PostgreSQL aborted (same abort wording as the engine's banner); then one of "Same outcome as this engine, with the same statement results, final state and aborted transactions." / "Same outcome as this engine; some statement-level details differ. The About page lists them." / "This differs from the engine's outcome. The About page lists the measured differences."
+- Read Uncommitted: exactly "PostgreSQL has no read-uncommitted" (the task's wording); shown only if the harness probe saw no dirty read when asking PostgreSQL for READ UNCOMMITTED.
+- **[claim-check]** The badge says nothing about other databases or other PostgreSQL versions; the version printed is the one the harness ran against.
+
+### 6b. About page: "Comparison with a real database" (`components/ConformanceSection.tsx`)
+- Intro: "The same schedules were run on this engine (version X) and on PostgreSQL Y. Read Committed, Snapshot Isolation (run as PostgreSQL's Repeatable Read) and Serializable are compared: the N canned scenarios first, then M random schedules per level (seeds A to B, no DELETE). Every mismatch is re-run 5 times on PostgreSQL before it is classified."
+- Canned: "The outcome is the same on both sides in a of b scenario-and-level pairs; c of them are identical statement by statement, in the final state and in which transactions aborted." + table with "Engine <glyph word>, PostgreSQL <glyph word>" and "(differs)" when they do not match.
+- Random: table columns "Schedules", "Compared strictly", "Identical", "Identical when no two statements were blocked at once", "Deadlock: same outcome class".
+- Explanation sentence: "When one commit or abort releases several waiting transactions at once, PostgreSQL lets them run concurrently, while this engine serves them in arrival order. The schedules that can differ are the ones where two statements were blocked at the same time; the measured differences are listed below." **[claim-check]** The first sentence states how the two behave; the engine half is from the engine's code, the PostgreSQL half is what the experiments in METHODOLOGY.md showed (outcomes vary between runs). The *reason* PostgreSQL's order is skewed in some schedules is not established and the page does not say.
+- Serializable: bullets with the counts from the file (both serializable, same abort sets, engine aborts more / fewer, same size different sets).
+- "Measured differences": for each `knownDivergences` entry its title, levels, occurrence counts, cause (or exactly "cause not yet established"), and the smallest schedule in a collapsible block (inert text).
+- Read Uncommitted: "PostgreSQL has no read-uncommitted. Asked for READ UNCOMMITTED on the dirty-read schedule, it showed no dirty read and produced the same history as READ COMMITTED." (second clause only if measured.)
+- "How reliable is the comparison?": "Running each canned scenario at each level K times gave a different PostgreSQL history in u of p cases. Of all e comparisons, r were re-run, and the re-runs disagreed with each other in x of them."
+- The Limits list (`app/about/page.tsx`) is unchanged; items 3 and 4 still carry no PostgreSQL clause. Restoring "most databases, including PostgreSQL, treat READ UNCOMMITTED as READ COMMITTED" would now be supported by the probe for PostgreSQL only; I left that to you.

@@ -9,6 +9,7 @@ import { CompareStrip } from "./CompareStrip";
 import { ExplainPanel } from "./ExplainPanel";
 import { LevelSwitch } from "./LevelSwitch";
 import { PgBadge } from "./PgBadge";
+import type { PgBadgeData } from "@/lib/conformance";
 import { ResultBanner } from "./ResultBanner";
 import { StepControls } from "./StepControls";
 import { StorePanel } from "./StorePanel";
@@ -18,6 +19,8 @@ import { VerdictPanel } from "./VerdictPanel";
 interface Props {
   traces: Record<Level, Trace>;
   defaultLevel: Level;
+  /** Measured PostgreSQL results for this scenario, per level (anomaly pages only). */
+  pg?: Partial<Record<Level, PgBadgeData>>;
   /** Mirror level and step in ?level=&step= (anomaly pages). Off in the playground, whose URL is the #s= fragment. */
   syncUrl?: boolean;
 }
@@ -31,7 +34,7 @@ function isTypingTarget(t: EventTarget | null): boolean {
   return t.isContentEditable || t instanceof HTMLInputElement || t instanceof HTMLTextAreaElement || t instanceof HTMLSelectElement || t instanceof HTMLAnchorElement;
 }
 
-export function TraceViewer({ traces, defaultLevel, syncUrl = true }: Props) {
+export function TraceViewer({ traces, defaultLevel, pg, syncUrl = true }: Props) {
   const [level, setLevel] = useState<Level>(defaultLevel);
   const [stepper, dispatch] = useReducer(reduce, { step: 0, playing: false });
   const [urlReady, setUrlReady] = useState(!syncUrl);
@@ -126,7 +129,7 @@ export function TraceViewer({ traces, defaultLevel, syncUrl = true }: Props) {
 
       <CompareStrip traces={traces} level={level} step={stepper.step} onPick={changeLevel} />
       <VerdictPanel trace={trace} />
-      <PgBadge level={level} />
+      <PgBadge level={level} data={pg?.[level]} />
     </div>
   );
 }

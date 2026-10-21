@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "engineVersion": "9.9.9",
+  "postgresVersion": "99.1",
+  "corpus": { "seedBase": 1000, "randomPerLevel": 40, "noDelete": true },
+  "harness": { "reruns": 5, "blockedAfterMs": 200, "unblockWaitMs": 2000, "workers": 2, "wallSeconds": 12, "stabilityRepeats": 4, "stabilityPairs": 6, "stabilityUnstable": 1, "evaluations": 126, "rerunMismatches": 9, "unstableReruns": 3 },
+  "canned": [
+    {
+      "scenario": "dirty-read",
+      "title": "Dirty Read: the number that was never real",
+      "levels": {
+        "RC": { "engine": { "invariant": "holds", "serializable": true, "aborts": {}, "mechanism": "visibility" }, "postgres": { "invariant": "holds", "serializable": true, "aborts": {}, "mechanism": "visibility" }, "classMatch": true, "identical": true, "diffs": [] },
+        "SI": { "engine": { "invariant": "holds", "serializable": true, "aborts": {}, "mechanism": "visibility" }, "postgres": { "invariant": "holds", "serializable": true, "aborts": {}, "mechanism": "visibility" }, "classMatch": true, "identical": true, "diffs": [] },
+        "SER": { "engine": { "invariant": "holds", "serializable": true, "aborts": {}, "mechanism": "visibility" }, "postgres": { "invariant": "holds", "serializable": true, "aborts": {}, "mechanism": "visibility" }, "classMatch": true, "identical": true, "diffs": [] }
+      }
+    },
+    {
+      "scenario": "write-skew",
+      "title": "Write Skew: the hospital with no doctor on call",
+      "levels": {
+        "RC": { "engine": { "invariant": "violated", "serializable": false, "aborts": {}, "mechanism": "none" }, "postgres": { "invariant": "violated", "serializable": false, "aborts": {}, "mechanism": "none" }, "classMatch": true, "identical": true, "diffs": [] },
+        "SI": { "engine": { "invariant": "violated", "serializable": false, "aborts": {}, "mechanism": "none" }, "postgres": { "invariant": "holds", "serializable": true, "aborts": { "T2": "abort_dependencies" }, "mechanism": "abort_dependencies" }, "classMatch": false, "identical": false, "diffs": ["abort set engine={} postgres={T2:serialization}"] },
+        "SER": { "engine": { "invariant": "holds", "serializable": true, "aborts": { "T2": "abort_dependencies" }, "mechanism": "abort_dependencies" }, "postgres": { "invariant": "holds", "serializable": true, "aborts": { "T2": "abort_dependencies" }, "mechanism": "abort_dependencies" }, "classMatch": true, "identical": true, "diffs": [] }
+      }
+    }
+  ],
+  "readUncommitted": { "scenario": "dirty-read", "requested": "READ UNCOMMITTED", "engineRU": "violated", "postgresInvariant": "holds", "dirtyReadObserved": false, "sameHistoryAsReadCommitted": true },
+  "random": {
+    "RC": { "level": "RC", "schedules": 40, "deadlockSchedules": 6, "deadlockClassAgreed": 5, "compared": 34, "identical": 31, "raceSchedules": 7, "noRaceCompared": 28, "noRaceIdentical": 28, "raceEngineSeen": 6, "raceVariants": 4, "mismatches": 4, "mismatchesRace": 4, "reproducing": 1, "unstableRace": 3, "unstableOther": 0, "explained": 4, "unexplained": 0, "engineSerializable": 0, "postgresSerializable": 0, "abortSetsIdentical": 0, "engineAbortsMore": 0, "engineAbortsFewer": 0, "abortSetsDifferSameCount": 0, "engineAbortsFewerNotSerializable": 0 },
+    "SI": { "level": "SI", "schedules": 40, "deadlockSchedules": 5, "deadlockClassAgreed": 5, "compared": 35, "identical": 35, "raceSchedules": 5, "noRaceCompared": 30, "noRaceIdentical": 30, "raceEngineSeen": 5, "raceVariants": 1, "mismatches": 0, "mismatchesRace": 0, "reproducing": 0, "unstableRace": 0, "unstableOther": 0, "explained": 0, "unexplained": 0, "engineSerializable": 0, "postgresSerializable": 0, "abortSetsIdentical": 0, "engineAbortsMore": 0, "engineAbortsFewer": 0, "abortSetsDifferSameCount": 0, "engineAbortsFewerNotSerializable": 0 },
+    "SER": { "level": "SER", "schedules": 40, "deadlockSchedules": 4, "deadlockClassAgreed": 4, "compared": 36, "identical": 30, "raceSchedules": 5, "noRaceCompared": 31, "noRaceIdentical": 28, "raceEngineSeen": 4, "raceVariants": 2, "mismatches": 6, "mismatchesRace": 2, "reproducing": 5, "unstableRace": 1, "unstableOther": 0, "explained": 2, "unexplained": 0, "engineSerializable": 40, "postgresSerializable": 40, "abortSetsIdentical": 33, "engineAbortsMore": 1, "engineAbortsFewer": 5, "abortSetsDifferSameCount": 1, "engineAbortsFewerNotSerializable": 0 }
+  },
+  "knownDivergences": [
+    { "id": "D1", "title": "A fixture divergence", "levels": ["RC", "SI"], "cause": "cause not yet established", "causeEstablished": false, "notes": "A fixture note.", "signatures": ["x"], "regression": "fixture.azs", "schedule": "scenario fixture\nschedule:\n  T1 BEGIN\n  T1 COMMIT\n", "occurrences": { "RC": 3, "SI": 1 } }
+  ],
+  "unexplained": []
+}

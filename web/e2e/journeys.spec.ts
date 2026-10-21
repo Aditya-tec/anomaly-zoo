@@ -213,14 +213,17 @@ test.describe("no engine on the pages (AC7.2 groundwork)", () => {
   });
 });
 
-test.describe("claims policy", () => {
-  test("no route mentions PostgreSQL or renders a conformance badge", async ({ page }) => {
+test.describe("claims policy (P8: PostgreSQL appears only where measured data is rendered)", () => {
+  test("only the About page and the anomaly pages mention PostgreSQL; the map and the playground never do", async ({ page }) => {
     for (const route of ROUTES) {
       await page.goto(route);
       const text = await page.locator("body").innerText();
-      expect(text, route).not.toMatch(/postgres/i);
-      expect(await page.locator('[data-testid="pg-badge"]').count(), route).toBe(0);
-      expect(text, route).not.toMatch(/\bconformance\b/i);
+      if (route === "/about" || route.startsWith("/anomalies/")) {
+        expect(text, route).toMatch(/postgres/i);
+      } else {
+        expect(text, route).not.toMatch(/postgres/i);
+        expect(await page.locator('[data-testid="pg-badge"]').count(), route).toBe(0);
+      }
     }
   });
 });

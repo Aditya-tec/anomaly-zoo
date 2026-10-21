@@ -3,6 +3,7 @@
 // cells and traces), so no outcome is ever authored by hand (spec §9.2). The
 // ESLint config bans these words everywhere else.
 import type { Level, ManifestScenario, ManifestTrace, Trace } from "./types";
+import type { PgBadgeData } from "./conformance";
 import { LEVELS, LEVEL_NAMES } from "./levels";
 
 export type Outcome = "occurs" | "prevented" | "not-evaluated";
@@ -182,4 +183,27 @@ export function defaultLevelFromTraces(traces: Record<Level, Trace>): Level {
   }
   if (pick) return pick;
   return traces.RU.invariants.length > 0 ? "RU" : "SER";
+}
+export interface PgBadgeView {
+  tone: Tone;
+  /** Glyph and word of the PostgreSQL outcome; null for the Read Uncommitted note. */
+  label: OutcomeLabel | null;
+  headline: string;
+  lines: string[];
+}
+
+/** What the PostgreSQL badge says, from measured conformance data only. */
+export function pgBadgeView(level: Level, d: PgBadgeData): PgBadgeView {
+  if (d.kind === "no-read-uncommitted") {
+    return { tone: "neutral", label: null, headline: "PostgreSQL has no read-uncommitted", lines: [] };
+  }
+  const o = outcomeFromInvariant(d.invariant);
+  const label = outcomeLabel(o);
+  const lines: string[] = [];
+  const ids = Object.keys(d.aborts).sort();
+  for (const id of ids) lines.push(`PostgreSQL aborted ${id}: ${abortSummary(d.aborts[id] ?? "")}.`);
+  if (!d.classMatch) lines.push("This differs from the engine's outcome. The About page lists the measured differences.");
+  else if (d.identical) lines.push("Same outcome as this engine, with the same statement results, final state and aborted transactions.");
+  else lines.push("Same outcome as this engine; some statement-level details differ. The About page lists them.");
+  return { tone: outcomeTone(o), label, headline: `PostgreSQL ${d.postgresVersion} at ${LEVEL_NAMES[level]}`, lines };
 }
