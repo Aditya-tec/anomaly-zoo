@@ -4,3 +4,6 @@ out/
 *.test
 coverage.out
 .env*
+
+# Raw screen recordings are large and reproducible (cd web; node scripts/record-launch.mjs).
+docs/launch/*.raw.webm
