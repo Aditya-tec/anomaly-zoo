@@ -304,6 +304,9 @@ func (r *Report) Text() string {
 		}
 	}
 	for _, lv := range Levels {
+		if _, ok := r.Random[string(lv)]; !ok {
+			continue
+		}
 		t := r.Random[string(lv)]
 		fmt.Fprintf(&b, "%-3s schedules=%d deadlock=%d (class agreed %d) compared=%d identical=%d (%s) mismatches=%d reproducing=%d unstable=%d explained=%d unexplained=%d\n",
 			lv, t.Schedules, t.DeadlockSchedules, t.DeadlockClassAgreed, t.Compared, t.Identical, pct(t.Identical, t.Compared),
@@ -340,6 +343,9 @@ func (r *Report) Failing() string {
 		}
 	}
 	for _, lv := range Levels {
+		if _, ok := r.Random[string(lv)]; !ok {
+			continue
+		}
 		t := r.Random[string(lv)]
 		if t.UnstableOther > 0 {
 			why = append(why, fmt.Sprintf("%s: %d mismatches did not reproduce and no waiters raced (harness timing)", lv, t.UnstableOther))
@@ -390,4 +396,68 @@ func sigMatch(pattern, sig string) bool {
 		rest = rest[i+len(p):]
 	}
 	return strings.HasSuffix(rest, parts[len(parts)-1])
+}
+
+// MergeReports combines the reports of per-level shards (same engine,
+// PostgreSQL and corpus) into one. Totals stay per level; harness counters add up.
+func MergeReports(rs []*Report) (*Report, error) {
+	if len(rs) == 0 {
+		return nil, fmt.Errorf("nothing to merge")
+	}
+	out := *rs[0]
+	out.Canned = nil
+	out.Random = map[string]LevelTotals{}
+	out.Unexplained = []Unexplained{}
+	out.Harness = HarnessInfo{Reruns: rs[0].Harness.Reruns, BlockedAfterMs: rs[0].Harness.BlockedAfterMs, UnblockWaitMs: rs[0].Harness.UnblockWaitMs, Workers: rs[0].Harness.Workers, StabilityRepeats: rs[0].Harness.StabilityRepeats}
+	out.KnownDivergences = append([]Divergence(nil), rs[0].KnownDivergences...)
+	for i := range out.KnownDivergences {
+		out.KnownDivergences[i].Occurrences = map[string]int{}
+	}
+	byScenario := map[string]*CannedEntry{}
+	var order []string
+	for _, r := range rs {
+		if r.EngineVersion != rs[0].EngineVersion || r.PostgresVersion != rs[0].PostgresVersion || r.Corpus != rs[0].Corpus {
+			return nil, fmt.Errorf("shards disagree on engine version, PostgreSQL version or corpus")
+		}
+		for _, c := range r.Canned {
+			e := byScenario[c.Scenario]
+			if e == nil {
+				cc := CannedEntry{Scenario: c.Scenario, Title: c.Title, Levels: map[string]CannedLevel{}}
+				e = &cc
+				byScenario[c.Scenario] = e
+				order = append(order, c.Scenario)
+			}
+			for lv, l := range c.Levels {
+				e.Levels[lv] = l
+			}
+		}
+		for lv, t := range r.Random {
+			if _, dup := out.Random[lv]; dup {
+				return nil, fmt.Errorf("level %s appears in two shards", lv)
+			}
+			out.Random[lv] = t
+		}
+		for i, d := range r.KnownDivergences {
+			for lv, n := range d.Occurrences {
+				out.KnownDivergences[i].Occurrences[lv] += n
+			}
+		}
+		out.Unexplained = append(out.Unexplained, r.Unexplained...)
+		h := r.Harness
+		out.Harness.StabilityPairs += h.StabilityPairs
+		out.Harness.StabilityUnstable += h.StabilityUnstable
+		out.Harness.Evaluations += h.Evaluations
+		out.Harness.RerunMismatches += h.RerunMismatches
+		out.Harness.UnstableReruns += h.UnstableReruns
+		if h.WallSeconds > out.Harness.WallSeconds {
+			out.Harness.WallSeconds = h.WallSeconds // shards run in parallel
+		}
+		if out.ReadUncommitted == nil {
+			out.ReadUncommitted = r.ReadUncommitted
+		}
+	}
+	for _, s := range order {
+		out.Canned = append(out.Canned, *byScenario[s])
+	}
+	return &out, nil
 }

@@ -4,6 +4,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"os"
@@ -31,9 +32,18 @@ func main() {
 		dlevel    = flag.String("level", "RC", "level for -debug")
 		dn        = flag.Int("n", 20, "repetitions for -debug")
 		seedList  = flag.String("seeds", "", "comma-separated seeds to run instead of the first -random seeds (investigations)")
+		levelList = flag.String("levels", "RC,SI,SER", "levels to run (a nightly shard runs one)")
+		rerunRace = flag.Bool("rerun-race", true, "also re-run matching schedules that had simultaneous blocking (off: re-run actual mismatches only)")
+		merge     = flag.String("merge", "", "comma-separated shard reports to merge into -out (no PostgreSQL needed)")
 		regress   = flag.String("regressions", "../engine/testdata/regressions", "directory holding the regression schedules")
 	)
 	flag.Parse()
+	if *merge != "" {
+		mustMerge(*merge, *out)
+		return
+	}
+	conformance.RerunMatchedRace = *rerunRace
+	conformance.Levels = parseLevels(*levelList)
 	dsn := os.Getenv("CONFORMANCE_DATABASE_URL")
 	if dsn == "" {
 		fmt.Fprintln(os.Stderr, "CONFORMANCE_DATABASE_URL is not set")
@@ -141,6 +151,45 @@ func main() {
 func must(err error) {
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "error:", err)
+		os.Exit(1)
+	}
+}
+
+func parseLevels(s string) []trace.Level {
+	var out []trace.Level
+	for _, p := range strings.Split(s, ",") {
+		switch l := trace.Level(strings.TrimSpace(p)); l {
+		case trace.RC, trace.SI, trace.SER:
+			out = append(out, l)
+		default:
+			must(fmt.Errorf("level %q is not compared with PostgreSQL (RC, SI, SER)", p))
+		}
+	}
+	return out
+}
+
+// mustMerge reads the shard reports, writes the merged report to out, prints
+// the summary and exits non-zero when the merged report fails.
+func mustMerge(list, out string) {
+	var rs []*conformance.Report
+	for _, p := range strings.Split(list, ",") {
+		b, err := os.ReadFile(strings.TrimSpace(p))
+		must(err)
+		var r conformance.Report
+		must(json.Unmarshal(b, &r))
+		rs = append(rs, &r)
+	}
+	m, err := conformance.MergeReports(rs)
+	must(err)
+	fmt.Println(m.Text())
+	if out != "" {
+		b, err := m.JSON()
+		must(err)
+		must(os.WriteFile(out, b, 0o644))
+		fmt.Println("wrote", out)
+	}
+	if w := m.Failing(); w != "" {
+		fmt.Println("FAIL:", strings.TrimSpace(w))
 		os.Exit(1)
 	}
 }

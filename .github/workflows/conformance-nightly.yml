@@ -1,13 +1,18 @@
 name: conformance-nightly
 
 # Runs the PostgreSQL differential harness (spec §9.4) on a much larger corpus
-# than CI does: 10,000 random schedules per level instead of 500. The report is
-# kept as an artifact; nothing is committed or published from here.
-# Trigger it from the Actions tab (workflow_dispatch) or wait for the schedule.
+# than CI does: 10,000 random schedules per level instead of 500. One shard per
+# isolation level (RC, SI, SER), each on its own runner with its own PostgreSQL
+# service container, then a final job merges the three reports into one.
+# Every shard runs the same fixed seed range (8000000 .. 8000000 + schedules - 1),
+# so the three levels see the same schedules. Nothing is committed or published.
+#
+# Trigger: Actions tab > "conformance-nightly" > Run workflow (workflow_dispatch),
+# or wait for the weekly schedule (change the cron line below to taste).
 
 on:
   schedule:
-    - cron: "23 3 * * *"
+    - cron: "23 3 * * 1" # weekly, Mondays 03:23 UTC
   workflow_dispatch:
     inputs:
       schedules:
@@ -15,7 +20,7 @@ on:
         required: false
         default: "10000"
 
-# No token permissions by default; the job asks for read access to the repository only.
+# No token permissions by default; each job asks for read access to the repository only.
 permissions: {}
 
 concurrency:
@@ -23,12 +28,16 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  nightly:
-    name: nightly
+  shard:
+    name: shard ${{ matrix.level }}
     runs-on: ubuntu-latest
-    timeout-minutes: 345 # the hosted-runner limit is 360
+    timeout-minutes: 300
     permissions:
       contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        level: [RC, SI, SER]
     services:
       postgres:
         image: postgres:16
@@ -59,16 +68,66 @@ jobs:
           go-version-file: conformance/go.mod
           cache-dependency-path: conformance/go.sum
 
-      - name: Conformance harness
+      - name: Conformance harness (one level)
         env:
           # Passed through the environment, never interpolated into the script.
           SCHEDULES: ${{ github.event.inputs.schedules || '10000' }}
+          LEVEL: ${{ matrix.level }}
         run: |
           set -o pipefail
           case "$SCHEDULES" in
             ''|*[!0-9]*) echo "schedules must be a number"; exit 1 ;;
           esac
-          go run ./cmd/azoo-conformance -random "$SCHEDULES" -workers 6 -stability 10 -show 200 \
+          # Only actual mismatches are re-run (5 times); -rerun-race=false skips the
+          # extra re-runs of matching schedules that CI does to measure PostgreSQL's variation.
+          go run ./cmd/azoo-conformance -levels "$LEVEL" -random "$SCHEDULES" -workers 6 -stability 10 \
+            -rerun-race=false -show 200 -out "$RUNNER_TEMP/conformance-shard-$LEVEL.json" \
+            | tee "$RUNNER_TEMP/conformance-shard-$LEVEL.txt"
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: conformance-shard-${{ matrix.level }}
+          path: |
+            ${{ runner.temp }}/conformance-shard-${{ matrix.level }}.json
+            ${{ runner.temp }}/conformance-shard-${{ matrix.level }}.txt
+          retention-days: 30
+
+  merge:
+    name: merged report
+    needs: shard
+    if: always() # merge whatever the shards produced; the merge step fails if one is missing
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: conformance
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: conformance/go.mod
+          cache-dependency-path: conformance/go.sum
+
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: conformance-shard-*
+          merge-multiple: true
+          path: ${{ runner.temp }}/shards
+
+      - name: Merge the three shard reports
+        run: |
+          set -o pipefail
+          for l in RC SI SER; do
+            test -s "$RUNNER_TEMP/shards/conformance-shard-$l.json" || { echo "shard $l produced no report"; exit 1; }
+          done
+          go run ./cmd/azoo-conformance \
+            -merge "$RUNNER_TEMP/shards/conformance-shard-RC.json,$RUNNER_TEMP/shards/conformance-shard-SI.json,$RUNNER_TEMP/shards/conformance-shard-SER.json" \
             -out "$RUNNER_TEMP/conformance-nightly.json" | tee "$RUNNER_TEMP/conformance-nightly.txt"
 
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

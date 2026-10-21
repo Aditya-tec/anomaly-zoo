@@ -15,6 +15,11 @@ import (
 // Levels is the set compared against PostgreSQL (spec §9.4: RC, SI, SER only).
 var Levels = []trace.Level{trace.RC, trace.SI, trace.SER}
 
+// RerunMatchedRace re-runs schedules with simultaneous blocking even when the
+// first run agreed with the engine, to measure PostgreSQL's variation. The
+// nightly shards switch it off: they re-run actual mismatches only.
+var RerunMatchedRace = true
+
 // Reruns is how often every mismatch is re-run against PostgreSQL;
 // RaceReruns is the longer series used when two statements waited for the same
 // key (PostgreSQL itself varies there, so more runs are needed to see which
@@ -215,7 +220,7 @@ func Evaluate(ctx context.Context, r *Runner, c Case, level trace.Level) (*Eval,
 	e.compare()
 	e.RaceRisk = pg.RaceRisk
 	e.Variants = 1
-	if !e.Mismatch && !(level == trace.SER && e.abortsDiffer()) && !pg.RaceRisk {
+	if !e.Mismatch && !(level == trace.SER && e.abortsDiffer()) && !(pg.RaceRisk && RerunMatchedRace) {
 		return e, nil
 	}
 	// Flake control: re-run against PostgreSQL before anything is classified.
