@@ -133,11 +133,49 @@ export const SUBSET_LABEL_TEXT = "subset chosen after the fact to explain the di
 const SUBSET_LABEL = /subset chosen after the fact to explain the differences, not an independent result/i;
 const SUBSET_TRIGGER = /no two statements (?:were |are )?blocked at (?:once|the same time)|blocked at once/i;
 
+const WORDS = { one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10, eleven: 11, twelve: 12 };
+const NUM = "(\\d+|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)";
+const toNum = (s) => (/^\d+$/.test(s) ? Number(s) : WORDS[s.toLowerCase()]);
+
+/**
+ * The number of documented divergences, and how many have "cause not yet established", change as
+ * conformance.json changes. Wherever a document states either count it must match the file.
+ * div = { total, unestablished } read from web/public/conformance.json.
+ */
+export function staleDivergenceCounts(name, text, div) {
+  const problems = [];
+  // "8 documented differences", "five divergences", "there are 8, each with a minimal schedule"
+  const total = new RegExp(`\\b${NUM}\\s+(?:documented\\s+)?(?:differences|divergences)\\b|\\bthere are ${NUM},?\\s+each with a minimal schedule`, "gi");
+  for (const m of text.matchAll(total)) {
+    const n = toNum(m[1] ?? m[2]);
+    if (n !== div.total) problems.push(`${name}: says ${m[0].trim()}, but conformance.json has ${div.total} divergences`);
+  }
+  // "two ... \"cause not yet established\"": the nearest count before the phrase
+  for (const m of text.matchAll(/cause not yet established/gi)) {
+    const before = text.slice(Math.max(0, m.index - 70), m.index);
+    const found = [...before.matchAll(new RegExp(`\\b${NUM}\\b`, "gi"))];
+    const last = found[found.length - 1];
+    if (last && toNum(last[1]) !== div.unestablished && /\b(?:of them|are|is|with|marked|listed|recorded)\b/i.test(before.slice(last.index))) {
+      problems.push(`${name}: says ${last[1]} with "cause not yet established", but conformance.json has ${div.unestablished}`);
+    }
+  }
+  return problems;
+}
+
+/** Divergence totals from the committed report. */
+export function divergenceCounts(root = ROOT) {
+  const p = join(root, "web", "public", "conformance.json");
+  if (!existsSync(p)) return null;
+  const ds = JSON.parse(readFileSync(p, "utf8")).knownDivergences ?? [];
+  return { total: ds.length, unestablished: ds.filter((d) => !d.causeEstablished).length };
+}
+
 const paragraphs = (text) => text.split(/\n\s*\n/);
 
 /** Returns a list of problems for one file. kind: "readme" | "draft" | "page" | "copy". */
 export function checkText(name, text, kind, recorded, structural = new Set(), perSource = null) {
   const problems = [];
+  if (perSource && perSource.div) problems.push(...staleDivergenceCounts(name, text, perSource.div));
   for (const [re, what] of BANNED) {
     // The bare "the first / the only / the best" pattern is for text written as a claim; the COPY
     // files merely list wording ("the first two words"), where only the shaped patterns apply.
@@ -206,7 +244,7 @@ export const FILES = () => {
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
   const recorded = recordedNumbers();
   const structural = structuralNumbers();
-  const perSource = { conf: confNumbers(), logs: logNumbers() };
+  const perSource = { conf: confNumbers(), logs: logNumbers(), div: divergenceCounts() };
   const all = [];
   let checked = 0;
   for (const [f, kind] of FILES()) {

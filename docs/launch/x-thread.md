@@ -22,7 +22,7 @@ How the engine works: each transaction reads from a snapshot of committed versio
 How it is checked: the Serializable level ran on 20,000 random schedules per level in every test run against a serializability oracle, 0 histories rejected [source: docs/PROGRESS.md, AC4.2]. Not a proof; evidence.
 
 **5/6**
-And PostgreSQL 16.15, on 500 random schedules per level: 415 of 434 identical at Read Committed, 441 of 446 at Snapshot Isolation [source: web/public/conformance.json, random.RC and random.SI]. The differences are listed, two with "cause not yet established" [source: conformance.json, knownDivergences].
+And PostgreSQL 16.15, on 500 random schedules per level: 415 of 434 identical at Read Committed, 441 of 446 at Snapshot Isolation [source: web/public/conformance.json, random.RC and random.SI]. The differences are listed (8), three with "cause not yet established" [source: conformance.json, knownDivergences].
 
 **6/6**
 What it is not: keys and integers, no SQL, a deterministic simulation, a simplified Serializable level. It explains concepts; your database's docs are the authority.

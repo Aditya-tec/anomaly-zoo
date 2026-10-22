@@ -74,3 +74,23 @@ test("the 'no two statements blocked at once' subset must carry its label wherev
   const labelled = bare.replace(".", ", a subset chosen after the fact to explain the differences, not an independent result.");
   assert.ok(!checkText("t.md", labelled, "draft", rec).some((p) => /subset chosen after the fact/.test(p)));
 });
+
+test("a stale divergence count (total or 'cause not yet established') fails; the current counts pass", () => {
+  const perSource = { conf: new Set(), logs: new Set(), div: { total: 8, unestablished: 3 } };
+  const rec = new Set();
+  const stale = [
+    'there are 5, each with a minimal schedule, and two of them are listed as "cause not yet established"',
+    "5 differences documented, each with a minimal schedule",
+    "Eight divergences, two marked \"cause not yet established\"",
+    'The differences are listed, two with "cause not yet established"',
+    "seven documented divergences",
+  ];
+  for (const s of stale) assert.ok(checkText("t.md", s, "copy", rec, new Set(), perSource).some((p) => /conformance\.json has/.test(p)), `not caught: ${s}`);
+  const fresh = [
+    'there are 8, each with a minimal schedule, and three of them are listed as "cause not yet established"',
+    "8 differences documented, each with a minimal schedule",
+    'The differences are listed, three with "cause not yet established"',
+    "Eight divergences, three marked \"cause not yet established\"",
+  ];
+  for (const s of fresh) assert.deepEqual(checkText("t.md", s, "copy", rec, new Set(), perSource).filter((p) => /conformance\.json has/.test(p)), [], s);
+});
