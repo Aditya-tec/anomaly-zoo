@@ -22,9 +22,9 @@ Status key: **done** = verified here, with the evidence shown; **not done** = co
 
 ## Steps that are only yours
 
-1. **Deploy.** In Vercel, switch the project's Root Directory from `spike` to `web` (the build settings are in `web/vercel.json`; add no environment variables; leave Analytics and Speed Insights off). Then run `node web/scripts/check-deployed.mjs https://<your-host>` and Lighthouse on the production URL.
+1. **Deploy: done by the owner** (Root Directory `web`; `check-deployed.mjs` passed on the live URL). Still open: Lighthouse on the production URL. The setup was: in Vercel, switch the project's Root Directory from `spike` to `web` (the build settings are in `web/vercel.json`; add no environment variables; leave Analytics and Speed Insights off). Then run `node web/scripts/check-deployed.mjs https://<your-host>` and Lighthouse on the production URL.
 2. **Production URL.** If the Vercel name is not `anomaly-zoo.vercel.app`, run `node scripts/site-url.mjs --set https://<your-host>`, then `cd web && npm run build && npm run og`, commit. `node scripts/site-url.mjs --check` (in CI) fails if a document quotes a different URL.
-3. **Delete `spike/`** in its own commit once `web/` is deployed (nothing else depends on it).
+3. **Delete `spike/`: done** (its own commit, `Delete spike/`).
 4. **Live Firefox check** (the COOP workaround stays in the local test server until you report the result).
 5. **Dispatch the long runs:** `conformance-nightly` (10,000 per level, three shards) and `fuzz` (`fuzztime: 60m`); record both results in `docs/PROGRESS.md`.
 6. **GitHub settings** in `docs/REPO-SETTINGS-CHECKLIST.md` (branch protection last).
