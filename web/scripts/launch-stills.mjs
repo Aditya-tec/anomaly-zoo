@@ -1,5 +1,5 @@
 // Launch stills (spec 13.1 items 2, 3, 5), made from the REAL built site and from recorded numbers:
-//   habitat-map-light.png, habitat-map-dark.png   the map, clean
+//   habitat-map.png                               the map, clean (the site has one dark theme)
 //   how-verified.png, engine-diagram.png          the verification diagram (measured numbers) and how the engine works
 //   carousel-1-bug.png, carousel-2-fix.png, carousel-3-proof.png   1080 x 1350
 // Run from web/ after `npm run build`:  node scripts/launch-stills.mjs
@@ -53,29 +53,31 @@ for (let i = 0; i < 50; i++) {
 const browser = await chromium.launch();
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-// ---- habitat map, light and dark ----
-for (const scheme of ["light", "dark"]) {
-  const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 }, deviceScaleFactor: 2, colorScheme: scheme });
+// ---- habitat map (the site has a single dark theme over its background clip) ----
+{
+  const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 }, deviceScaleFactor: 2, reducedMotion: "reduce" });
   const page = await ctx.newPage();
   await page.goto(BASE + "/");
   await page.getByTestId("habitat-map").waitFor();
-  await sleep(400);
-  await page.getByTestId("habitat-map").screenshot({ path: join(OUT, `habitat-map-${scheme}.png`) });
+  await sleep(600);
+  const box = await page.getByTestId("habitat-map").boundingBox();
+  const pad = 28; // a margin, so the first column is not flush with the image edge
+  await page.screenshot({ path: join(OUT, "habitat-map.png"), clip: { x: Math.max(0, box.x - pad), y: Math.max(0, box.y - 6), width: box.width + 2 * pad, height: box.height + 6 + pad } });
   await ctx.close();
 }
 
 // ---- carousel 1 and 2: the bug, the fix (real page, caption overlay added by this script only) ----
 async function story(level, file, headline) {
-  const ctx = await browser.newContext({ viewport: { width: 1080, height: 1350 }, colorScheme: "light", bypassCSP: true });
+  const ctx = await browser.newContext({ viewport: { width: 1080, height: 1350 }, bypassCSP: true });
   const page = await ctx.newPage();
   await page.goto(`${BASE}/anomalies/write-skew?level=${level}`);
   await page.waitForFunction(() => document.querySelector('[data-testid="viewer"]')?.getAttribute("data-ready") === "true");
   const total = Number((await page.getByTestId("step-label").innerText()).match(/of\s+(\d+)/)[1]);
   for (let i = 0; i < total; i++) await page.getByRole("button", { name: "Next" }).click();
-  await page.evaluate(() => window.scrollTo(0, 110));
+  await page.evaluate(() => window.scrollTo(0, 425));
   await page.evaluate((t) => {
     const el = document.createElement("div");
-    el.setAttribute("style", "position:fixed;left:0;right:0;bottom:0;padding:22px 32px;background:rgba(10,14,25,0.94);color:#fff;font:700 34px/1.25 system-ui,Segoe UI,sans-serif;text-align:center");
+    el.setAttribute("style", "position:fixed;left:24px;right:24px;bottom:24px;padding:20px 32px;background:rgba(0,0,0,0.78);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.28);border-radius:32px;color:#fff;font:500 32px/1.3 system-ui,Segoe UI,sans-serif;text-align:center");
     el.textContent = t;
     document.documentElement.appendChild(el);
   }, headline);
@@ -85,6 +87,22 @@ async function story(level, file, headline) {
 }
 await story("SI", "carousel-1-bug.png", "The bug: both doctors go off call. Zero on call.");
 await story("SER", "carousel-2-fix.png", "The fix: at Serializable, T2 is aborted. One stays on call.");
+
+// The diagrams are standalone pages, so they carry the site's look themselves: black, glass boxes, the serif
+// headline (embedded, so nothing is fetched), and the lighter lane colours the site uses on black.
+const SERIF = readFileSync(join(root, "web", "node_modules", "@fontsource", "instrument-serif", "files", "instrument-serif-latin-400-normal.woff2")).toString("base64");
+const LOOK = `<style>
+  @font-face{font-family:"IS";src:url(data:font/woff2;base64,${SERIF}) format("woff2")}
+  body{background:#050505!important;color:#fff!important}
+  h1{font-family:"IS",Georgia,serif!important;font-weight:400!important;letter-spacing:-0.02em}
+  .sub,.note,.src,.arr{color:#b8b8b8!important}
+  .box,.c{background:rgba(255,255,255,0.06)!important;border-width:2px!important;border-radius:28px!important}
+  .v{background:rgba(255,255,255,0.08)!important;border-color:rgba(255,255,255,0.5)!important;color:#fff!important;border-radius:999px!important}
+  .v.dim{color:#b8b8b8!important}
+  .t{color:#000!important;border-radius:999px!important}
+  .t1{background:#7ab8ff!important} .t2{background:#ffa860!important}
+</style>`;
+const darken = (html) => html.replaceAll("#1b5fa6", "#7ab8ff").replaceAll("#17683d", "#6fd9a0").replaceAll("#a04800", "#ffa860").replaceAll("#a6203a", "#ff9a90").replaceAll("#4d5561", "#b8b8b8").replaceAll("#6a7280", "#b8b8b8") + LOOK;
 
 // ---- the verification diagram (landscape) and the proof still (portrait) ----
 function diagramHtml(w, h, portrait) {
@@ -114,7 +132,7 @@ function diagramHtml(w, h, portrait) {
 async function diagram(file, w, h, portrait) {
   const ctx = await browser.newContext({ viewport: { width: w, height: h }, deviceScaleFactor: portrait ? 1 : 1.5 });
   const page = await ctx.newPage();
-  await page.setContent(diagramHtml(w, h, portrait));
+  await page.setContent(darken(diagramHtml(w, h, portrait)));
   await page.screenshot({ path: join(OUT, file) });
   await ctx.close();
 }
@@ -158,7 +176,7 @@ function engineHtml(w, h) {
 {
   const ctx = await browser.newContext({ viewport: { width: 1600, height: 900 }, deviceScaleFactor: 1.5 });
   const page = await ctx.newPage();
-  await page.setContent(engineHtml(1600, 900));
+  await page.setContent(darken(engineHtml(1600, 900)));
   await page.screenshot({ path: join(OUT, "engine-diagram.png") });
   await ctx.close();
 }

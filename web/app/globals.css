@@ -439,8 +439,8 @@ select.btn option { background: var(--surface); color: var(--fg); }
 
 /* ---------- share image render target (/og/[slug]); fixed light palette, independent of the visitor's theme ---------- */
 .og-card {
-  --bg: #f6f4ee; --surface: #fdfcf9; --surface-2: #ece8dd; --border: #8a8474; --fg: #1c1b18; --fg-muted: #57534a;
-  --good: #1a6a3c; --bad: #a3261f; --accent: #1f5f53;
+  --bg: #050505; --surface: #121212; --surface-2: #1c1c1c; --border: #8a8a8a; --fg: #ffffff; --fg-muted: #b8b8b8;
+  --good: #8fe0ae; --bad: #ff9a90; --accent: #ffffff;
   position: fixed;
   top: 0;
   left: 0;
@@ -454,21 +454,22 @@ select.btn option { background: var(--surface); color: var(--fg); }
   justify-content: space-between;
   background: var(--bg);
   color: var(--fg);
-  border-left: 16px solid var(--accent);
+  border-left: 0;
   font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   overflow: hidden;
 }
-.og-top { display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 26px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--fg-muted); }
+.og-top { display: flex; justify-content: space-between; font-size: 26px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--fg-muted); }
 .og-brand { color: var(--accent); font-weight: 700; }
-.og-title { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; margin: 0; font-size: 104px; line-height: 1.02; letter-spacing: -0.02em; font-weight: 800; }
+
+.og-title { font-family: var(--font-serif-instrument); font-weight: 400; margin: 0; font-size: 132px; line-height: 1; letter-spacing: -0.02em; }
 .og-sub { margin: 14px 0 0; font-size: 40px; line-height: 1.25; color: var(--fg-muted); max-width: 980px; text-wrap: balance; }
 .og-levels { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; list-style: none; margin: 0; padding: 0; }
-.og-level { display: flex; flex-direction: column; gap: 4px; padding: 16px 20px; background: var(--surface); border: 2px solid var(--border); border-left: 10px solid var(--tone); border-radius: 12px; }
+.og-level { display: flex; flex-direction: column; gap: 4px; padding: 16px 20px; background: var(--surface); border: 2px solid rgb(255 255 255 / 0.3); border-left: 8px solid var(--tone); border-radius: 28px; }
 .og-code { font-family: var(--font-mono); font-size: 40px; font-weight: 800; }
 .og-name { font-size: 22px; color: var(--fg-muted); }
 .og-outcome { font-size: 32px; font-weight: 700; color: var(--tone); }
 .og-names { display: flex; flex-wrap: wrap; gap: 12px 16px; list-style: none; margin: 0; padding: 0; }
-.og-names li { padding: 10px 20px; background: var(--surface); border: 2px solid var(--border); border-radius: 999px; font-size: 28px; font-weight: 600; }
+.og-names li { padding: 10px 20px; background: var(--surface); border: 2px solid rgb(255 255 255 / 0.3); border-radius: 999px; font-size: 28px; font-weight: 600; }
 
 /* The share card is a rendered image, not part of the terminal: opt it out of the page-level treatments. */
 .og-card, .og-card * { text-shadow: none; }

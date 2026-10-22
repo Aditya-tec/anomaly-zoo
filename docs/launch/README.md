@@ -8,7 +8,7 @@ Spec section 13.1 and 13.2. Everything in this folder is a draft for the owner t
 |---|---|---|
 | `hero.mp4` | 24 s recording of write skew: Snapshot Isolation (zero on call), flip to Serializable, T2 aborts, the invariant holds | `cd web && npm run build && node scripts/record-launch.mjs` (needs `ffmpeg`) |
 | `hero.gif` | The same clip as a GIF under 5 MB | same command (it backs off width, frame rate and colours until the file fits) |
-| `habitat-map-light.png`, `habitat-map-dark.png` | The map, clean | `cd web && node scripts/launch-stills.mjs` |
+| `habitat-map.png` | The map, clean (the site has one dark theme, so there is one image) | `cd web && node scripts/launch-stills.mjs` |
 | `engine-diagram.png` | "How the engine works": snapshots, lock waits, dependency tracking, with illustrative values (for X post 3) | same command |
 | `how-verified.png` | "How it is verified": engine to oracle, engine and PostgreSQL on shared schedules, with measured numbers read from `conformance.json` and `docs/PROGRESS.md` when the script runs | same command |
 | `carousel-1-bug.png`, `carousel-2-fix.png`, `carousel-3-proof.png` | The bug, the fix, the proof (1080 x 1350) | same command |

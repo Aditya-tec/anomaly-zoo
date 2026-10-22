@@ -46,7 +46,6 @@ const context = await browser.newContext({
   viewport: { width: 1280, height: 960 },
   recordVideo: { dir: work, size: { width: 1280, height: 960 } },
   bypassCSP: true,
-  colorScheme: "light",
   reducedMotion: "no-preference",
 });
 const page = await context.newPage();
@@ -59,7 +58,7 @@ await page.addInitScript(() => {
     el.id = "rec-caption";
     el.setAttribute(
       "style",
-      "position:fixed;left:0;right:0;bottom:0;z-index:2147483647;padding:14px 24px;background:rgba(10,14,25,0.92);color:#fff;font:600 24px/1.3 system-ui,Segoe UI,sans-serif;text-align:center;pointer-events:none",
+      "position:fixed;left:50%;transform:translateX(-50%);bottom:18px;width:calc(100% - 48px);max-width:1120px;box-sizing:border-box;z-index:2147483647;padding:14px 28px;background:rgba(0,0,0,0.78);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.28);border-radius:28px;color:#fff;font:500 22px/1.35 system-ui,Segoe UI,sans-serif;text-align:center;pointer-events:none",
     );
     document.documentElement.appendChild(el);
   };
@@ -87,7 +86,7 @@ const toStep = async (n, pause = 700) => {
 await page.goto(`${BASE}/anomalies/write-skew?level=SI`);
 await page.getByTestId("viewer").waitFor();
 await page.waitForFunction(() => document.querySelector('[data-testid="viewer"]')?.getAttribute("data-ready") === "true");
-await page.evaluate(() => window.scrollTo(0, 215));
+await page.evaluate(() => window.scrollTo(0, 430));
 await caption("Hospital rule: at least one doctor must stay on call. Two are on call.");
 await sleep(3200);
 const total = await stepsTotal();
@@ -103,7 +102,7 @@ await caption("Same schedule, same clicks. Now at Serializable.");
 await page.locator('label:has([data-testid="level-SER"])').click();
 await sleep(1800);
 await page.keyboard.press("r"); // keyboard reset, a documented shortcut
-await page.evaluate(() => window.scrollTo(0, 215));
+await page.evaluate(() => window.scrollTo(0, 430));
 await sleep(900);
 await toStep(Math.max(1, Math.floor(total * 0.45)), 800);
 await caption("The engine records which transaction read what the other one wrote.");

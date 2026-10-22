@@ -10,7 +10,7 @@ Two doctors go off call at the same time. Your transaction just broke the hospit
 Watch write skew happen, step by step, then flip the isolation level and watch it get stopped. Runs in your browser.
 https://anomaly-zoo.vercel.app [MISSING: confirm the production URL is live before posting]
 
-**2/6** (attach `habitat-map-light.png`)
+**2/6** (attach `habitat-map.png`)
 Eight anomalies by four isolation levels. Every cell is computed by running the engine, not written by hand, and CI asserts the whole matrix.
 
 Click any cell to replay that run.

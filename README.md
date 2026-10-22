@@ -15,10 +15,7 @@ Anomaly Zoo is a from-scratch MVCC engine in Go (standard library only) that run
 
 Eight anomalies by four isolation levels. Every cell is computed by running the engine, and CI asserts the whole matrix against [`scenarios/expected.json`](scenarios/expected.json); no outcome is written by hand anywhere in the web app.
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/launch/habitat-map-dark.png">
-  <img src="docs/launch/habitat-map-light.png" alt="The habitat map: eight anomalies in rows, four isolation levels in columns, each cell marked Occurs or Prevented" width="900">
-</picture>
+<img src="docs/launch/habitat-map.png" alt="The habitat map: eight anomalies in rows, four isolation levels in columns, each cell marked Occurs or Prevented" width="900">
 
 ## Run it
 
