@@ -108,3 +108,11 @@ Every sentence below is generated from `web/public/conformance.json`; it contain
 - Read Uncommitted: "PostgreSQL has no read-uncommitted. Asked for READ UNCOMMITTED on the dirty-read schedule, it showed no dirty read and produced the same history as READ COMMITTED." (second clause only if measured.)
 - "How reliable is the comparison?": "Running each canned scenario at each level K times gave a different PostgreSQL history in u of p cases. Of all e comparisons, r were re-run, and the re-runs disagreed with each other in x of them."
 - The Limits list (`app/about/page.tsx`) is unchanged; items 3 and 4 still carry no PostgreSQL clause. Restoring "most databases, including PostgreSQL, treat READ UNCOMMITTED as READ COMMITTED" would now be supported by the probe for PostgreSQL only; I left that to you.
+
+## 5. Terminal re-skin copy [mine]
+- **[mine]** Hero prompt (typed, decorative): `visitor@zoo:~$ azoo matrix scenarios`. The command is real; the user and host are branding. Review.
+- **[mine]** Home section "This engine, by level", with the sentence "Counted from the map above: in how many of the N scenarios the invariant holds at each level of this teaching engine. A summary of these runs, not a claim about any database." Each row reads "holds in n of N". **[claim-check]** worded as a count of this engine's own runs; confirm you are happy that it names no database.
+- **[mine]** Level meter accessible name: "Scenarios where the invariant holds, per isolation level, in this engine".
+- **[mine]** Theme button labels "Theme: Phosphor" and "Theme: Paper" (replace System, Light, Dark).
+- **[mine]** Decorative comments: "// mechanism" (map tooltip), "// end of page" (footer), "// " before eyebrows, "./" before navigation links, "[x]" and "[ ]" on the level switch.
+- No claim about databases was added. Nothing here goes into the README or launch drafts yet.
