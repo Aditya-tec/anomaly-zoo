@@ -15,7 +15,7 @@ Eight anomalies by four isolation levels. Every cell is computed by running the 
 
 Click any cell to replay that run.
 
-**3/6** (attach `carousel-2-fix.png`; [MISSING: a dedicated engine diagram was not drawn, this timeline still stands in for it])
+**3/6** (attach `engine-diagram.png`)
 How the engine works: each transaction reads from a snapshot of committed versions. Writers take locks and wait in line. At Serializable it also tracks who read what another transaction wrote, and aborts one when they form a dangerous pattern.
 
 **4/6** (attach `how-verified.png`)

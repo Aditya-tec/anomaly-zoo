@@ -65,3 +65,12 @@ test("a number cited to conformance.json must be in conformance.json, not merely
   const logs = checkText("t.md", "0 rejected on 20,000 schedules [source: docs/PROGRESS.md, AC4.2].", "draft", rec, new Set(), perSource);
   assert.deepEqual(logs, []);
 });
+
+test("the 'no two statements blocked at once' subset must carry its label wherever it is shown", () => {
+  const rec = new Set(["345", "351"]);
+  const bare = "Identical when no two statements were blocked at once: 345 of 345 [source: web/public/conformance.json].";
+  assert.ok(checkText("t.md", bare, "draft", rec).some((p) => /subset chosen after the fact/.test(p)));
+  assert.ok(checkText("README.md", bare, "readme", rec).some((p) => /subset chosen after the fact/.test(p)));
+  const labelled = bare.replace(".", ", a subset chosen after the fact to explain the differences, not an independent result.");
+  assert.ok(!checkText("t.md", labelled, "draft", rec).some((p) => /subset chosen after the fact/.test(p)));
+});

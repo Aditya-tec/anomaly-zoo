@@ -129,6 +129,10 @@ export function structuralNumbers(root = ROOT) {
   return set;
 }
 
+export const SUBSET_LABEL_TEXT = "subset chosen after the fact to explain the differences, not an independent result";
+const SUBSET_LABEL = /subset chosen after the fact to explain the differences, not an independent result/i;
+const SUBSET_TRIGGER = /no two statements (?:were |are )?blocked at (?:once|the same time)|blocked at once/i;
+
 const paragraphs = (text) => text.split(/\n\s*\n/);
 
 /** Returns a list of problems for one file. kind: "readme" | "draft" | "page" | "copy". */
@@ -140,6 +144,18 @@ export function checkText(name, text, kind, recorded, structural = new Set(), pe
     if (kind === "copy" && re === BANNED[0][0]) continue;
     const m = text.match(re);
     if (m) problems.push(`${name}: banned phrase ${what}: "${m[0]}"`);
+  }
+  // The "no two statements blocked at once" subset was chosen after the fact to explain the
+  // differences. Wherever it is shown it must say so (the README, the About page and every launch draft).
+  if (kind !== "copy") {
+    if (SUBSET_TRIGGER.test(text) && !SUBSET_LABEL.test(text)) {
+      problems.push(`${name}: shows the "no two statements blocked at once" subset without the label "${SUBSET_LABEL_TEXT}"`);
+    }
+    if (kind !== "page") {
+      for (const para of paragraphs(text)) {
+        if (SUBSET_TRIGGER.test(para) && !SUBSET_LABEL.test(para)) problems.push(`${name}: a paragraph shows the "no two statements blocked at once" subset without the label "${SUBSET_LABEL_TEXT}": "${para.trim().slice(0, 70).replace(/\s+/g, " ")}..."`);
+      }
+    }
   }
   for (const para of paragraphs(text)) {
     const bad = numbersIn(para).filter((n) => !recorded.has(n));

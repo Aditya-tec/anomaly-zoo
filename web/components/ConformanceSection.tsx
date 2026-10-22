@@ -110,7 +110,7 @@ export function ConformanceSection({ conf }: { conf: Conformance }) {
                 Identical
               </th>
               <th scope="col" className="border border-line p-2 text-right">
-                Identical when no two statements were blocked at once
+                Identical when no two statements were blocked at once (subset chosen after the fact to explain the differences, not an independent result)
               </th>
               <th scope="col" className="border border-line p-2 text-right">
                 Deadlock: same outcome class
@@ -147,7 +147,7 @@ export function ConformanceSection({ conf }: { conf: Conformance }) {
         </table>
       </div>
       <p>
-        When one commit or abort releases several waiting transactions at once, PostgreSQL lets them run concurrently, while this engine serves them in arrival order. The schedules that can differ are the ones where two statements were blocked at the same time; the measured differences are listed below.
+        When one commit or abort releases several waiting transactions at once, PostgreSQL lets them run concurrently, while this engine serves them in arrival order. The schedules that can differ are the ones where two statements were blocked at the same time; the measured differences are listed below. The "no two statements blocked at once" column is a subset chosen after the fact to explain the differences, not an independent result.
       </p>
 
       <h3 className="mt-6 mb-2 text-lg font-semibold">Serializable</h3>
