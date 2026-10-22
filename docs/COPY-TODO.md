@@ -56,7 +56,7 @@ Legend: **[spec]** is taken from the spec verbatim or nearly so; **[mine]** is w
 - Methodology: "Anomaly Zoo is a from-scratch MVCC engine written in Go using only the standard library. It runs scripted schedules of two or three transactions at four isolation levels and records every step as a trace." and "The habitat map is computed by running the engine and is asserted against expected results in continuous integration. These pages replay those recorded traces; the engine itself does not run in your browser here." (from the §13.3 allowed claims; the second sentence describes P6 only and must change in P7).
 - Limits (the five of §13.3 with two edits): **3** "Read Uncommitted is included for teaching, to show dirty reads." (dropped "PostgreSQL has no equivalent [VERIFY]"); **4** "The Serializable level is a simplified version: it uses prefix-level predicate locks and has no read-only optimization, so it can abort more transactions than a production database would." (replaced "than PostgreSQL; the conformance report quantifies this").
 - FAQ: three questions I chose, answered only with spec text: "Does this behave exactly like my database?" (limit 5 + the §8.4 closing line), "Why is Read Uncommitted included?" (§8.2 RU definition), "Why can Serializable abort a transaction?" (§8.2 SER definition).
-- Privacy: spec §10.6 sentence plus **"If you use the theme button, your choice is kept in your browser's local storage; nothing is sent anywhere."** (the spec says no cookies; localStorage for the theme is allowed by the task but not mentioned in the spec's privacy line).
+- Privacy: spec §10.6 sentence, verbatim. (An earlier draft added a sentence about the theme button and local storage; the theme button is gone, so the site stores nothing and the sentence was removed.)
 - Engine build: "The committed WebAssembly build of the engine (1.0.0, built with go1.27.0) has this SHA-256. Rebuilding it from source with the pinned Go toolchain gives the same hash." (true: CI rebuilds and compares; see docs/DECISIONS.md).
 - Link text: "Source code on GitHub".
 
@@ -109,10 +109,10 @@ Every sentence below is generated from `web/public/conformance.json`; it contain
 - "How reliable is the comparison?": "Running each canned scenario at each level K times gave a different PostgreSQL history in u of p cases. Of all e comparisons, r were re-run, and the re-runs disagreed with each other in x of them."
 - The Limits list (`app/about/page.tsx`) is unchanged; items 3 and 4 still carry no PostgreSQL clause. Restoring "most databases, including PostgreSQL, treat READ UNCOMMITTED as READ COMMITTED" would now be supported by the probe for PostgreSQL only; I left that to you.
 
-## 5. Terminal re-skin copy [mine]
-- **[mine]** Hero prompt (typed, decorative): `visitor@zoo:~$ azoo matrix scenarios`. The command is real; the user and host are branding. Review.
-- **[mine]** Home section "This engine, by level", with the sentence "Counted from the map above: in how many of the N scenarios the invariant holds at each level of this teaching engine. A summary of these runs, not a claim about any database." Each row reads "holds in n of N". **[claim-check]** worded as a count of this engine's own runs; confirm you are happy that it names no database.
-- **[mine]** Level meter accessible name: "Scenarios where the invariant holds, per isolation level, in this engine".
-- **[mine]** Theme button labels "Theme: Phosphor" and "Theme: Paper" (replace System, Light, Dark).
-- **[mine]** Decorative comments: "// mechanism" (map tooltip), "// end of page" (footer), "// " before eyebrows, "./" before navigation links, "[x]" and "[ ]" on the level switch.
+## 5. Observe-style restyle copy [mine]
+(Replaces the terminal-skin list that was here; the terminal hero prompt, the theme labels and the comment-style decorations no longer exist.)
+- **[mine]** Hero headline: the tagline, with its last word, "off.", set in italic. No wording change.
+- **[mine]** Hero pill: a short count line ("a number of bugs, four isolation levels", built from the map data) and the button "Explore the map" (jumps to the habitat map).
+- **[mine]** Home section "This engine, by level", with the sentence "Counted from the map above: in how many of the scenarios the invariant holds at each level of this teaching engine. A summary of these runs, not a claim about any database." Each row reads "holds in n of N" and the bar's accessible name repeats it. **[claim-check]** worded as a count of this engine's own runs; it names no database.
+- **[mine]** Header: the mark and name, links "Habitat map" and "About", and "Playground" as the primary button. Footer: the two existing teaching-engine sentences, plus the button "Stop motion" / "Resume motion" for the background clip.
 - No claim about databases was added. Nothing here goes into the README or launch drafts yet.
