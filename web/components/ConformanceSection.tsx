@@ -124,7 +124,7 @@ export function ConformanceSection({ conf, headline }: { conf: Conformance; head
         {prov ? (
           <>
             {" "}
-            (<a href={prov.runUrl} rel="noopener noreferrer" data-testid="conf-run-link">GitHub Actions run <span data-testid="conf-run-id">{prov.runId}</span></a>, commit <span className="mono" data-testid="conf-run-commit">{prov.commit.slice(0, 7)}</span>, <span data-testid="conf-run-date">{prov.date}</span>; file <span className="mono">conformance-10k.json</span>)
+            (<a href={prov.runUrl} className="underline" rel="noopener noreferrer" data-testid="conf-run-link">GitHub Actions run <span data-testid="conf-run-id">{prov.runId}</span></a>, commit <span className="mono" data-testid="conf-run-commit">{prov.commit.slice(0, 7)}</span>, <span data-testid="conf-run-date">{prov.date}</span>; file <span className="mono">conformance-10k.json</span>)
           </>
         ) : null}
         . <strong>PR-gate sample:</strong> the <span data-testid="conf-gate-per-level">{conf.corpus.randomPerLevel}</span> random schedules per level that CI runs on every push (file <span className="mono">conformance.json</span>), shown separately below.
