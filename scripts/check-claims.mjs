@@ -2,9 +2,12 @@
 //   node scripts/check-claims.mjs
 // 1. Banned phrases must not appear in the README, the About page text, the COPY files,
 //    the launch drafts or the release checklist.
-// 2. Every number in those files must come from a recorded source: conformance.json (including
-//    percentages computed from its counts), docs/PROGRESS.md and docs/DECISIONS.md (the logs of recorded runs), or the
+// 2. Every number in those files must come from a recorded source: conformance.json (the 500-schedule
+//    PR-gate report) or conformance-10k.json (the 10,000-schedule headline run), including percentages
+//    computed from their counts; docs/PROGRESS.md and docs/DECISIONS.md (the logs of recorded runs); or the
 //    short list of structural numbers in docs/claims-allowlist.txt (each with a reason).
+//    A conformance figure in the README or a launch draft must also name which of the two files it comes
+//    from, and must be in that file (a figure from the 500 report cited to the 10k file fails, and the reverse).
 // 3. In the README and in launch drafts, a paragraph that contains such a number must also
 //    cite where it comes from: a markdown link (README) or a [source: ...] / [MISSING: ...] marker (drafts).
 import { existsSync, readFileSync, readdirSync } from "node:fs";
@@ -34,6 +37,7 @@ export function stripNonClaims(text) {
     .replace(/`[^`\n]*`/g, " ")
     .replace(/\[(source|MISSING)[^\]]*\]/gi, " ")
     .replace(/\]\([^)]*\)/g, "] ")
+    .replace(/conformance-10k\.json/g, " ") // a file name, not a figure
     .replace(/https?:\/\/\S+/g, " ")
     .replace(/<[^>\n]+>/g, " ")
     .replace(/\b\d{4}-\d{2}-\d{2}\b/g, " ")
@@ -61,15 +65,24 @@ function leaves(v, acc = []) {
   return acc;
 }
 
-/** Numbers that conformance.json records or that its counts give (percentages, same pairs as the site). */
-export function confNumbers(root = ROOT) {
+export const CONF_FILES = { gate: "conformance.json", headline: "conformance-10k.json" };
+
+/** Which conformance report a citation names, if any ("conformance-10k.json" is not matched by "conformance.json"). */
+export function citedConformance(cited) {
+  if (/conformance-10k\.json/.test(cited)) return CONF_FILES.headline;
+  if (/conformance\.json/.test(cited)) return CONF_FILES.gate;
+  return null;
+}
+
+/** Numbers that one conformance report records or that its counts give (percentages, same pairs as the site). */
+export function confNumbers(root = ROOT, file = CONF_FILES.gate) {
   const set = new Set();
   const add = (n) => {
     const s = String(n);
     set.add(s);
     if (Number.isFinite(Number(s))) set.add(String(Number(s)));
   };
-  const confPath = join(root, "web", "public", "conformance.json");
+  const confPath = join(root, "web", "public", file);
   if (existsSync(confPath)) {
     const conf = JSON.parse(readFileSync(confPath, "utf8"));
     leaves(conf).forEach(add);
@@ -102,9 +115,9 @@ export function logNumbers(root = ROOT) {
   return set;
 }
 
-/** The recorded-source number set: conformance.json, the logs, and the structural allowlist. */
+/** The recorded-source number set: both conformance reports, the logs, and the structural allowlist. */
 export function recordedNumbers(root = ROOT) {
-  const set = new Set([...confNumbers(root), ...logNumbers(root)]);
+  const set = new Set([...confNumbers(root, CONF_FILES.gate), ...confNumbers(root, CONF_FILES.headline), ...logNumbers(root)]);
   const add = (n) => set.add(String(n));
   const alw = join(root, "docs", "claims-allowlist.txt");
   if (existsSync(alw)) {
@@ -162,9 +175,9 @@ export function staleDivergenceCounts(name, text, div) {
   return problems;
 }
 
-/** Divergence totals from the committed report. */
-export function divergenceCounts(root = ROOT) {
-  const p = join(root, "web", "public", "conformance.json");
+/** Divergence totals from a committed report. */
+export function divergenceCounts(root = ROOT, file = CONF_FILES.gate) {
+  const p = join(root, "web", "public", file);
   if (!existsSync(p)) return null;
   const ds = JSON.parse(readFileSync(p, "utf8")).knownDivergences ?? [];
   return { total: ds.length, unestablished: ds.filter((d) => !d.causeEstablished).length };
@@ -206,11 +219,27 @@ export function checkText(name, text, kind, recorded, structural = new Set(), pe
         const chunk = para.slice(last, m.index);
         last = m.index + m[0].length;
         const cited = m[0];
-        const allowed = /conformance\.json/.test(cited) ? perSource.conf : /PROGRESS|DECISIONS/.test(cited) ? perSource.logs : null;
-        if (!allowed) continue;
+        const which = citedConformance(cited);
+        const allowed = which === CONF_FILES.headline ? (perSource.conf10k ?? NONE) : which === CONF_FILES.gate ? perSource.conf : /PROGRESS|DECISIONS/.test(cited) ? perSource.logs : null;
+        if (!allowed) {
+          if (kind !== "draft" && kind !== "readme") continue;
+          // A conformance figure cited to something that is not a conformance file.
+          for (const n of new Set(numbersIn(chunk))) {
+            if (ALWAYS_OK.has(n) || structural.has(n) || !(perSource.confAll ?? NONE).has(n) || perSource.logs.has(n)) continue;
+            problems.push(`${name}: conformance figure ${n} is cited to ${cited.slice(0, 40)}, not to conformance.json or conformance-10k.json: "${chunk.trim().slice(-80).replace(/\s+/g, " ")}"`);
+          }
+          continue;
+        }
         for (const n of new Set(numbersIn(chunk))) {
           if (ALWAYS_OK.has(n) || structural.has(n) || allowed.has(n)) continue;
-          problems.push(`${name}: number ${n} is cited to ${/conformance\.json/.test(cited) ? "conformance.json" : "the logs"} but is not in it: "${chunk.trim().slice(-80).replace(/\s+/g, " ")}"`);
+          problems.push(`${name}: number ${n} is cited to ${which ?? "the logs"} but is not in it: "${chunk.trim().slice(-80).replace(/\s+/g, " ")}"`);
+        }
+      }
+      // Figures after the last citation (or in a paragraph with none) name no source at all.
+      if (kind === "draft" || kind === "readme") {
+        for (const n of new Set(numbersIn(para.slice(last)))) {
+          if (ALWAYS_OK.has(n) || structural.has(n) || !(perSource.confAll ?? NONE).has(n) || perSource.logs.has(n)) continue;
+          problems.push(`${name}: conformance figure ${n} does not name conformance.json or conformance-10k.json as its source: "${para.slice(last).trim().slice(0, 80).replace(/\s+/g, " ")}"`);
         }
       }
     }
@@ -226,7 +255,8 @@ export function checkText(name, text, kind, recorded, structural = new Set(), pe
 }
 
 // Small counting numbers that read as words ("two sentences") need no citation of their own.
-const ALWAYS_OK = new Set(["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]);
+const NONE = new Set();
+const ALWAYS_OK = new Set(["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]);
 
 export const FILES = () => {
   const files = [
@@ -244,14 +274,25 @@ export const FILES = () => {
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
   const recorded = recordedNumbers();
   const structural = structuralNumbers();
-  const perSource = { conf: confNumbers(), logs: logNumbers(), div: divergenceCounts() };
+  const conf = confNumbers(ROOT, CONF_FILES.gate);
+  const conf10k = confNumbers(ROOT, CONF_FILES.headline);
+  const perSource = { conf, conf10k, confAll: new Set([...conf, ...conf10k]), logs: logNumbers(), div: divergenceCounts() };
   const all = [];
+  if (!existsSync(join(ROOT, "web", "public", CONF_FILES.headline))) all.push("web/public/conformance-10k.json is missing");
+  const d10k = divergenceCounts(ROOT, CONF_FILES.headline);
+  if (perSource.div && d10k && (d10k.total !== perSource.div.total || d10k.unestablished !== perSource.div.unestablished)) {
+    all.push(`conformance.json lists ${perSource.div.total} divergences (${perSource.div.unestablished} without an established cause) but conformance-10k.json lists ${d10k.total} (${d10k.unestablished}); the documents can only state one count`);
+  }
   let checked = 0;
   for (const [f, kind] of FILES()) {
     const p = join(ROOT, f);
     if (!existsSync(p)) continue;
     checked++;
-    all.push(...checkText(f, readFileSync(p, "utf8").replace(/\r\n/g, "\n"), kind, recorded, structural, perSource));
+    const body = readFileSync(p, "utf8").replace(/\r\n/g, "\n");
+    if (f === "web/components/ConformanceSection.tsx") {
+      for (const need of Object.values(CONF_FILES)) if (!body.includes(need)) all.push(`${f}: does not name ${need}`);
+    }
+    all.push(...checkText(f, body, kind, recorded, structural, perSource));
   }
   if (all.length) {
     console.error(`claims check FAILED (${all.length}):\n  ${all.join("\n  ")}`);

@@ -1,0 +1,758 @@
+{
+  "schemaVersion": 1,
+  "provenance": {
+    "source": "GitHub Actions workflow conformance-nightly (three shards plus merge), run 2 of 2 on the 10,000-schedule corpus",
+    "runId": "39734736774",
+    "runUrl": "https://github.com/Aditya-tec/anomaly-zoo/actions/runs/39734736774",
+    "commit": "cb07402d55db29b5fa9c06db07d1d7575362406f",
+    "date": "2026-10-22",
+    "artifact": "conformance-nightly (conformance-nightly.json)"
+  },
+  "engineVersion": "1.0.0",
+  "postgresVersion": "16.15 (Debian 16.15-1.pgdg13+2)",
+  "corpus": {
+    "seedBase": 8000000,
+    "randomPerLevel": 10000,
+    "noDelete": true
+  },
+  "harness": {
+    "reruns": 5,
+    "blockedAfterMs": 200,
+    "unblockWaitMs": 2000,
+    "workers": 6,
+    "wallSeconds": 1996,
+    "stabilityRepeats": 10,
+    "stabilityPairs": 24,
+    "stabilityUnstable": 0,
+    "evaluations": 30024,
+    "rerunMismatches": 1636,
+    "unstableReruns": 682
+  },
+  "canned": [
+    {
+      "scenario": "deadlock",
+      "title": "Deadlock: two transactions waiting on each other",
+      "levels": {
+        "RC": {
+          "engine": {
+            "invariant": "violated",
+            "serializable": true,
+            "aborts": {
+              "T2": "abort_deadlock"
+            },
+            "mechanism": "abort_deadlock"
+          },
+          "postgres": {
+            "invariant": "violated",
+            "serializable": true,
+            "aborts": {
+              "T2": "abort_deadlock"
+            },
+            "mechanism": "abort_deadlock"
+          },
+          "classMatch": true,
+          "identical": true,
+          "diffs": []
+        },
+        "SER": {
+          "engine": {
+            "invariant": "violated",
+            "serializable": true,
+            "aborts": {
+              "T2": "abort_deadlock"
+            },
+            "mechanism": "abort_deadlock"
+          },
+          "postgres": {
+            "invariant": "violated",
+            "serializable": true,
+            "aborts": {
+              "T2": "abort_deadlock"
+            },
+            "mechanism": "abort_deadlock"
+          },
+          "classMatch": true,
+          "identical": true,
+          "diffs": []
+        },
+        "SI": {
+          "engine": {
+            "invariant": "violated",
+            "serializable": true,
+            "aborts": {
+              "T2": "abort_deadlock"
+            },
+            "mechanism": "abort_deadlock"
+          },
+          "postgres": {
+            "invariant": "violated",
+            "serializable": true,
+            "aborts": {
+              "T2": "abort_deadlock"
+            },
+            "mechanism": "abort_deadlock"
+          },
+          "classMatch": true,
+          "identical": true,
+          "diffs": []
+        }
+      }
+    },
+    {
+      "scenario": "dirty-read",
+      "title": "Dirty Read: seeing a value that never existed",
+      "levels": {
+        "RC": {
+          "engine": {
+            "invariant": "holds",
+            "serializable": true,
+            "aborts": {},
+            "mechanism": "visibility"
+          },
+          "postgres": {
+            "invariant": "holds",
+            "serializable": true,
+            "aborts": {},
+            "mechanism": "visibility"
+          },
+          "classMatch": true,
+          "identical": true,
+          "diffs": []
+        },
+        "SER": {
+          "engine": {
+            "invariant": "holds",
+            "serializable": true,
+            "aborts": {},
+            "mechanism": "visibility"
+          },
+          "postgres": {
+            "invariant": "holds",
+            "serializable": true,
+            "aborts": {},
+            "mechanism": "visibility"
+          },
+          "classMatch": true,
+          "identical": true,
+          "diffs": []
+        },
+        "SI": {
+          "engine": {
+            "invariant": "holds",
+            "serializable": true,
+            "aborts": {},
+            "mechanism": "visibility"
+          },
+          "postgres": {
+            "invariant": "holds",
+            "serializable": true,
+            "aborts": {},
+            "mechanism": "visibility"
+          },
+          "classMatch": true,
+          "identical": true,
+          "diffs": []
+        }
+      }
+    },
+    {
+      "scenario": "lost-update",
+      "title": "Lost Update: two deposits, one survives",
+      "levels": {
+        "RC": {
+          "engine": {
+            "invariant": "violated",
+            "serializable": false,
+            "aborts": {},
+            "mechanism": "none"
+          },
+          "postgres": {
+            "invariant": "violated",
+            "serializable": false,
+            "aborts": {},
+            "mechanism": "none"
+          },
+          "classMatch": true,
+          "identical": true,
+          "diffs": []
+        },
+        "SER": {
+          "engine": {
+            "invariant": "holds",
+            "serializable": true,
+            "aborts": {
+              "T2": "abort_concurrent_update"
+            },
+            "mechanism": "abort_concurrent_update"
+          },
+          "postgres": {
+            "invariant": "holds",
+            "serializable": true,
+            "aborts": {
+              "T2": "abort_concurrent_update"
+            },
+            "mechanism": "abort_concurrent_update"
+          },
+          "classMatch": true,
+          "identical": true,
+          "diffs": []
+        },
+        "SI": {
+          "engine": {
+            "invariant": "holds",
+            "serializable": true,
+            "aborts": {
+              "T2": "abort_concurrent_update"
+            },
+            "mechanism": "abort_concurrent_update"
+          },
+          "postgres": {
+            "invariant": "holds",
+            "serializable": true,
+            "aborts": {
+              "T2": "abort_concurrent_update"
+            },
+            "mechanism": "abort_concurrent_update"
+          },
+          "classMatch": true,
+          "identical": true,
+          "diffs": []
+        }
+      }
+    },
+    {
+      "scenario": "non-repeatable-read",
+      "title": "Non-Repeatable Read: the same question, two answers",
+      "levels": {
+        "RC": {
+          "engine": {
+            "invariant": "violated",
+            "serializable": false,
+            "aborts": {},
+            "mechanism": "none"
+          },
+          "postgres": {
+            "invariant": "violated",
+            "serializable": false,
+            "aborts": {},
+            "mechanism": "none"
+          },
+          "classMatch": true,
+          "identical": true,
+          "diffs": []
+        },
+        "SER": {
+          "engine": {
+            "invariant": "holds",
+            "serializable": true,
+            "aborts": {},
+            "mechanism": "visibility"
+          },
+          "postgres": {
+            "invariant": "holds",
+            "serializable": true,
+            "aborts": {},
+            "mechanism": "visibility"
+          },
+          "classMatch": true,
+          "identical": true,
+          "diffs": []
+        },
+        "SI": {
+          "engine": {
+            "invariant": "holds",
+            "serializable": true,
+            "aborts": {},
+            "mechanism": "visibility"
+          },
+          "postgres": {
+            "invariant": "holds",
+            "serializable": true,
+            "aborts": {},
+            "mechanism": "visibility"
+          },
+          "classMatch": true,
+          "identical": true,
+          "diffs": []
+        }
+      }
+    },
+    {
+      "scenario": "phantom",
+      "title": "Phantom: a row appears mid-transaction",
+      "levels": {
+        "RC": {
+          "engine": {
+            "invariant": "violated",
+            "serializable": false,
+            "aborts": {},
+            "mechanism": "none"
+          },
+          "postgres": {
+            "invariant": "violated",
+            "serializable": false,
+            "aborts": {},
+            "mechanism": "none"
+          },
+          "classMatch": true,
+          "identical": true,
+          "diffs": []
+        },
+        "SER": {
+          "engine": {
+            "invariant": "holds",
+            "serializable": true,
+            "aborts": {},
+            "mechanism": "visibility"
+          },
+          "postgres": {
+            "invariant": "holds",
+            "serializable": true,
+            "aborts": {},
+            "mechanism": "visibility"
+          },
+          "classMatch": true,
+          "identical": true,
+          "diffs": []
+        },
+        "SI": {
+          "engine": {
+            "invariant": "holds",
+            "serializable": true,
+            "aborts": {},
+            "mechanism": "visibility"
+          },
+          "postgres": {
+            "invariant": "holds",
+            "serializable": true,
+            "aborts": {},
+            "mechanism": "visibility"
+          },
+          "classMatch": true,
+          "identical": true,
+          "diffs": []
+        }
+      }
+    },
+    {
+      "scenario": "read-only-anomaly",
+      "title": "Read-Only Anomaly: a report that can never be right",
+      "levels": {
+        "RC": {
+          "engine": {
+            "invariant": "violated",
+            "serializable": false,
+            "aborts": {},
+            "mechanism": "none"
+          },
+          "postgres": {
+            "invariant": "violated",
+            "serializable": false,
+            "aborts": {},
+            "mechanism": "none"
+          },
+          "classMatch": true,
+          "identical": true,
+          "diffs": []
+        },
+        "SER": {
+          "engine": {
+            "invariant": "holds",
+            "serializable": true,
+            "aborts": {
+              "T2": "abort_dependencies"
+            },
+            "mechanism": "abort_dependencies"
+          },
+          "postgres": {
+            "invariant": "holds",
+            "serializable": true,
+            "aborts": {
+              "T2": "abort_dependencies"
+            },
+            "mechanism": "abort_dependencies"
+          },
+          "classMatch": true,
+          "identical": true,
+          "diffs": []
+        },
+        "SI": {
+          "engine": {
+            "invariant": "violated",
+            "serializable": false,
+            "aborts": {},
+            "mechanism": "none"
+          },
+          "postgres": {
+            "invariant": "violated",
+            "serializable": false,
+            "aborts": {},
+            "mechanism": "none"
+          },
+          "classMatch": true,
+          "identical": true,
+          "diffs": []
+        }
+      }
+    },
+    {
+      "scenario": "read-skew",
+      "title": "Read Skew: a total that does not add up",
+      "levels": {
+        "RC": {
+          "engine": {
+            "invariant": "violated",
+            "serializable": false,
+            "aborts": {},
+            "mechanism": "none"
+          },
+          "postgres": {
+            "invariant": "violated",
+            "serializable": false,
+            "aborts": {},
+            "mechanism": "none"
+          },
+          "classMatch": true,
+          "identical": true,
+          "diffs": []
+        },
+        "SER": {
+          "engine": {
+            "invariant": "holds",
+            "serializable": true,
+            "aborts": {},
+            "mechanism": "visibility"
+          },
+          "postgres": {
+            "invariant": "holds",
+            "serializable": true,
+            "aborts": {},
+            "mechanism": "visibility"
+          },
+          "classMatch": true,
+          "identical": true,
+          "diffs": []
+        },
+        "SI": {
+          "engine": {
+            "invariant": "holds",
+            "serializable": true,
+            "aborts": {},
+            "mechanism": "visibility"
+          },
+          "postgres": {
+            "invariant": "holds",
+            "serializable": true,
+            "aborts": {},
+            "mechanism": "visibility"
+          },
+          "classMatch": true,
+          "identical": true,
+          "diffs": []
+        }
+      }
+    },
+    {
+      "scenario": "write-skew",
+      "title": "Write Skew: the hospital with no doctor on call",
+      "levels": {
+        "RC": {
+          "engine": {
+            "invariant": "violated",
+            "serializable": false,
+            "aborts": {},
+            "mechanism": "none"
+          },
+          "postgres": {
+            "invariant": "violated",
+            "serializable": false,
+            "aborts": {},
+            "mechanism": "none"
+          },
+          "classMatch": true,
+          "identical": true,
+          "diffs": []
+        },
+        "SER": {
+          "engine": {
+            "invariant": "holds",
+            "serializable": true,
+            "aborts": {
+              "T2": "abort_dependencies"
+            },
+            "mechanism": "abort_dependencies"
+          },
+          "postgres": {
+            "invariant": "holds",
+            "serializable": true,
+            "aborts": {
+              "T2": "abort_dependencies"
+            },
+            "mechanism": "abort_dependencies"
+          },
+          "classMatch": true,
+          "identical": true,
+          "diffs": []
+        },
+        "SI": {
+          "engine": {
+            "invariant": "violated",
+            "serializable": false,
+            "aborts": {},
+            "mechanism": "none"
+          },
+          "postgres": {
+            "invariant": "violated",
+            "serializable": false,
+            "aborts": {},
+            "mechanism": "none"
+          },
+          "classMatch": true,
+          "identical": true,
+          "diffs": []
+        }
+      }
+    }
+  ],
+  "readUncommitted": {
+    "scenario": "dirty-read",
+    "requested": "READ UNCOMMITTED",
+    "engineRU": "violated",
+    "postgresInvariant": "holds",
+    "dirtyReadObserved": false,
+    "sameHistoryAsReadCommitted": true
+  },
+  "random": {
+    "RC": {
+      "level": "RC",
+      "schedules": 10000,
+      "deadlockSchedules": 1377,
+      "deadlockClassAgreed": 1248,
+      "compared": 8623,
+      "identical": 8294,
+      "raceSchedules": 2692,
+      "noRaceCompared": 6831,
+      "noRaceIdentical": 6831,
+      "raceEngineSeen": 2583,
+      "raceVariants": 391,
+      "mismatches": 458,
+      "mismatchesRace": 458,
+      "reproducing": 67,
+      "unstableRace": 391,
+      "unstableOther": 0,
+      "explained": 458,
+      "unexplained": 0,
+      "engineSerializable": 5589,
+      "postgresSerializable": 5621,
+      "abortSetsIdentical": 0,
+      "engineAbortsMore": 0,
+      "engineAbortsFewer": 0,
+      "abortSetsDifferSameCount": 0,
+      "engineAbortsFewerNotSerializable": 0
+    },
+    "SER": {
+      "level": "SER",
+      "schedules": 10000,
+      "deadlockSchedules": 992,
+      "deadlockClassAgreed": 941,
+      "compared": 9008,
+      "identical": 8123,
+      "raceSchedules": 2477,
+      "noRaceCompared": 7132,
+      "noRaceIdentical": 6518,
+      "raceEngineSeen": 2245,
+      "raceVariants": 191,
+      "mismatches": 936,
+      "mismatchesRace": 309,
+      "reproducing": 831,
+      "unstableRace": 105,
+      "unstableOther": 0,
+      "explained": 936,
+      "unexplained": 0,
+      "engineSerializable": 10000,
+      "postgresSerializable": 10000,
+      "abortSetsIdentical": 9296,
+      "engineAbortsMore": 56,
+      "engineAbortsFewer": 464,
+      "abortSetsDifferSameCount": 184,
+      "engineAbortsFewerNotSerializable": 0
+    },
+    "SI": {
+      "level": "SI",
+      "schedules": 10000,
+      "deadlockSchedules": 1021,
+      "deadlockClassAgreed": 998,
+      "compared": 8979,
+      "identical": 8882,
+      "raceSchedules": 2530,
+      "noRaceCompared": 7064,
+      "noRaceIdentical": 7064,
+      "raceEngineSeen": 2503,
+      "raceVariants": 100,
+      "mismatches": 120,
+      "mismatchesRace": 120,
+      "reproducing": 20,
+      "unstableRace": 100,
+      "unstableOther": 0,
+      "explained": 120,
+      "unexplained": 0,
+      "engineSerializable": 8393,
+      "postgresSerializable": 8399,
+      "abortSetsIdentical": 0,
+      "engineAbortsMore": 0,
+      "engineAbortsFewer": 0,
+      "abortSetsDifferSameCount": 0,
+      "engineAbortsFewerNotSerializable": 0
+    }
+  },
+  "knownDivergences": [
+    {
+      "id": "wake-order-race",
+      "title": "Transactions released together are not served in arrival order",
+      "levels": [
+        "RC"
+      ],
+      "cause": "This engine serves waiting transactions strictly in arrival order and lets each one run its queued statements before the next is woken. PostgreSQL does not: for the same schedule its result changes from run to run (in the smallest schedule either of the two waiting writers can end up writing last), so no single answer matches the engine every time.",
+      "causeEstablished": true,
+      "signatures": [
+        "RC:race/varies:*",
+        "SI:race/varies:*",
+        "SER:*:race/varies:*"
+      ],
+      "regression": "wake-order-race.azs",
+      "schedule": "scenario wake-order-race\ntitle \"Two waiters released by one commit\"\nstory \"T2 and T3 both wait for the key x that T1 holds. When T1 commits, this engine serves them in arrival order (T2, then T3), so T3's write is last. PostgreSQL lets both continue at once and either can write last.\"\nsetup:\n  PUT other = 1\nschedule:\n  T1 BEGIN\n  T2 BEGIN\n  T3 BEGIN\n  T1 PUT x = 1\n  T2 PUT x = 2\n  T3 PUT x = 3\n  T1 COMMIT\n  T2 COMMIT\n  T3 COMMIT\n",
+      "occurrences": {
+        "RC": 391,
+        "SER": 105,
+        "SI": 100
+      }
+    },
+    {
+      "id": "released-waiters-interleave",
+      "title": "When one transaction ends, PostgreSQL gives a contested key to a different waiter than the engine, every time",
+      "levels": [
+        "RC",
+        "SI",
+        "SER"
+      ],
+      "cause": "cause not yet established",
+      "causeEstablished": false,
+      "signatures": [
+        "RC:race/fixed:*",
+        "SI:race/fixed:*",
+        "SER:*:race/fixed:*"
+      ],
+      "regression": "released-waiters-interleave.azs",
+      "schedule": "scenario released-waiters-interleave\ntitle \"A released waiter races ahead of the next one\"\nstory \"T3 waits for q:2 and T1 waits for p:2, both held by T2. When T2 aborts, this engine wakes T3 first and runs its queued statements, so T3 takes p:2 before T1 is woken. In PostgreSQL T1 took p:2 first in every run measured, which changes who waits for whom. Why PostgreSQL's order is skewed this way is not established.\"\nschedule:\n  T2 BEGIN\n  T1 BEGIN\n  T3 BEGIN\n  T2 PUT q:2 = 41\n  T3 PUT q:2 = 18\n  T2 PUT p:2 = 1\n  T3 PUT p:2 = 97\n  T3 COMMIT\n  T1 PUT p:2 = 16\n  T1 COMMIT\n  T2 ABORT\n",
+      "occurrences": {
+        "RC": 67,
+        "SER": 204,
+        "SI": 20
+      }
+    },
+    {
+      "id": "ser-disjoint-keys",
+      "title": "PostgreSQL aborts a Serializable transaction that shares no key with the others",
+      "levels": [
+        "SER"
+      ],
+      "cause": "PostgreSQL keeps its Serializable read locks per index page, not per key. This table is a single page, so reading one key conflicts with writing any other key, and PostgreSQL aborts transactions that have nothing in common. This engine locks only the keys and key prefixes a transaction read, and commits both transactions in the smallest schedule.",
+      "causeEstablished": true,
+      "signatures": [
+        "SER:fewer:*"
+      ],
+      "regression": "ser-disjoint-keys.azs",
+      "schedule": "scenario ser-disjoint-keys\ntitle \"Serializable: two transactions on different keys\"\nstory \"T1 reads a and writes b; T2 reads c and writes d. No key is shared, so this engine commits both. PostgreSQL aborts T2 at commit. After a single-key read its lock table (pg_locks) shows a page-level read lock on the key index, and the whole table is one page.\"\nsetup:\n  PUT a = 1\n  PUT c = 1\nschedule:\n  T1 BEGIN\n  T2 BEGIN\n  T1 READ a AS x\n  T2 READ c AS y\n  T1 PUT b = 1\n  T2 PUT d = 1\n  T1 COMMIT\n  T2 COMMIT\n",
+      "occurrences": {
+        "SER": 421
+      }
+    },
+    {
+      "id": "ser-different-victim",
+      "title": "PostgreSQL aborts a different Serializable transaction than the engine",
+      "levels": [
+        "SER"
+      ],
+      "cause": "The same page-level read locks: PostgreSQL finds a dependency between two transactions that read and wrote different keys on one page, so a different transaction is the one that must be aborted. The engine sees no such dependency and aborts another transaction for an ordinary reason (in the smallest schedule, a concurrent update).",
+      "causeEstablished": true,
+      "signatures": [
+        "SER:same-count:*",
+        "SER:more:hint/page-locks:*"
+      ],
+      "regression": "ser-different-victim.azs",
+      "schedule": "scenario ser-different-victim\ntitle \"Serializable: a different transaction is aborted\"\nstory \"T1 reads p:3 (absent) and T3 writes q:2, different keys. This engine sees no dependency, so T2's write to q:1, which waits for T1, fails as a concurrent update once T1 commits. PostgreSQL aborts T1 at commit instead: its read locks are per index page, and p:3 and q:2 share one.\"\nschedule:\n  T3 BEGIN\n  T1 BEGIN\n  T1 PUT q:1 = 51\n  T1 READ p:3 AS v1_1\n  T3 PUT q:2 = 92\n  T3 COMMIT\n  T2 BEGIN\n  T2 SCAN q: AS v2_2\n  T2 PUT q:1 = 1\n  T1 COMMIT\n  T2 ABORT\n",
+      "occurrences": {
+        "SER": 124
+      }
+    },
+    {
+      "id": "ser-abort-earlier-statement",
+      "title": "PostgreSQL aborts the same Serializable transaction at an earlier statement",
+      "levels": [
+        "SER"
+      ],
+      "cause": "cause not yet established",
+      "causeEstablished": false,
+      "signatures": [
+        "SER:identical:*"
+      ],
+      "regression": "ser-abort-earlier-statement.azs",
+      "schedule": "scenario ser-abort-earlier-statement\ntitle \"Serializable: the same transaction is aborted, one statement earlier\"\nstory \"T3 and T1 end up depending on each other and T3 is the one that must go. This engine aborts T3 at its SCAN of q:. PostgreSQL aborts it one statement earlier, at the first read after T1 commits.\"\nsetup:\n  PUT p:3 = 7\nschedule:\n  T3 BEGIN\n  T1 BEGIN\n  T3 PUT p:1 = 23\n  T3 READ q:2 AS v3_1\n  T1 PUT q:1 = 0\n  T1 SCAN p: AS v1_5\n  T1 COMMIT\n  T3 READ p:3 AS v3_5\n  T3 SCAN q: AS v3_6\n  T3 ABORT\n",
+      "occurrences": {
+        "SER": 354
+      }
+    },
+    {
+      "id": "ser-no-writes-in-edge",
+      "title": "PostgreSQL aborts nobody when the transaction at the start of the dependency wrote nothing",
+      "levels": [
+        "SER"
+      ],
+      "cause": "In the smallest schedule the transaction at the start of the dependency chain (T2) only reads. This engine has no read-only optimisation (spec 4.8) and aborts T1; PostgreSQL aborts nobody. Control: with one harmless write added to T2 before its first data operation, PostgreSQL aborts T1 as the engine does.",
+      "causeEstablished": true,
+      "signatures": [
+        "SER:more:hint/no-writes-in-edge:*"
+      ],
+      "regression": "ser-no-writes-in-edge.azs",
+      "schedule": "scenario ser-no-writes-in-edge\ntitle \"Serializable: a transaction that writes nothing sits in the dependency\"\nstory \"T2 only reads. T1 read p:3 and T3 then wrote and committed it; T1 then wrote q:1, which T2 had scanned. This engine sees T2 to T1 to T3 with T3 committed first and aborts T1. PostgreSQL aborts nobody. With one harmless write added to T2, PostgreSQL aborts T1 as the engine does.\"\nschedule:\n  T2 BEGIN\n  T1 BEGIN\n  T3 BEGIN\n  T1 READ q:2 AS v1_0\n  T3 PUT p:3 = 20\n  T2 READ q:2 AS v2_3\n  T3 COMMIT\n  T2 SCAN q: AS v2_4\n  T2 COMMIT\n  T1 READ p:3 AS v1_5\n  T1 PUT q:1 = 59\n  T1 ABORT\n",
+      "occurrences": {
+        "SER": 3
+      }
+    },
+    {
+      "id": "ser-error-deferred-to-commit",
+      "title": "PostgreSQL does not raise the serialization error at the next statement; the engine does",
+      "levels": [
+        "SER"
+      ],
+      "cause": "This engine dooms a transaction when a dependency structure completes and aborts it at its very next statement (spec 4.8). In the smallest schedule PostgreSQL raised no error before the transaction rolled back by itself. Control: with that rollback turned into a commit, PostgreSQL aborts the same transaction as the engine, at the commit.",
+      "causeEstablished": true,
+      "signatures": [
+        "SER:more:hint/error-deferred-to-commit:*"
+      ],
+      "regression": "ser-error-deferred-to-commit.azs",
+      "schedule": "scenario ser-error-deferred-to-commit\ntitle \"Serializable: the error comes at commit, not at the next statement\"\nstory \"T1 and T2 depend on each other; T1 commits, so T2 can no longer commit. This engine aborts T2 at its next statement. PostgreSQL raises no error before T2 rolls back by itself. If T2 commits instead, PostgreSQL aborts T2 at the commit.\"\nschedule:\n  T2 BEGIN\n  T2 SCAN q: AS v2_0\n  T2 PUT p:1 = 1\n  T1 BEGIN\n  T1 READ p:1 AS v1_2\n  T1 PUT q:2 = 35\n  T1 COMMIT\n  T2 READ q:1 AS v2_3\n  T2 ABORT\n",
+      "occurrences": {
+        "SER": 5
+      }
+    },
+    {
+      "id": "ser-pivot-before-in-ends",
+      "title": "The engine aborts the middle transaction before the first one has ended; PostgreSQL aborts nobody",
+      "levels": [
+        "SER"
+      ],
+      "cause": "cause not yet established",
+      "causeEstablished": false,
+      "signatures": [
+        "SER:more:hint/in-transaction-rolled-back:*"
+      ],
+      "regression": "ser-pivot-before-in-ends.azs",
+      "schedule": "scenario ser-pivot-before-in-ends\ntitle \"Serializable: the middle transaction is aborted before the first one ends\"\nstory \"T1 to T2 to T3, with T3 committing first and T1 still open when T2 commits. This engine aborts T2 as soon as T3 commits. PostgreSQL lets T2 commit, then T1 rolls back by itself and nobody is aborted. If T1 commits instead, PostgreSQL aborts T1, not T2. Why PostgreSQL decides at that point is not established.\"\nschedule:\n  T1 BEGIN\n  T3 BEGIN\n  T2 BEGIN\n  T1 READ q:1 AS v1_0\n  T2 SCAN p: AS v2_2\n  T2 PUT p:3 = 75\n  T3 PUT p:2 = 48\n  T1 SCAN p: AS v1_2\n  T1 PUT q:1 = 63\n  T3 COMMIT\n  T2 COMMIT\n  T1 ABORT\n",
+      "occurrences": {
+        "SER": 6
+      }
+    }
+  ],
+  "unexplained": []
+}

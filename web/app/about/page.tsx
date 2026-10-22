@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { ConformanceSection } from "@/components/ConformanceSection";
-import { loadConformance, loadEngineInfo } from "@/lib/data";
+import { loadConformance, loadConformance10k, loadEngineInfo } from "@/lib/data";
 import { SHOW_CONFORMANCE_SECTION } from "@/lib/site";
 import { pageMetadata } from "@/lib/seo";
 import { LEVELS, LEVEL_DEFINITIONS, LEVEL_NAMES } from "@/lib/levels";
@@ -26,6 +26,7 @@ const limits = (pgHasNoReadUncommitted: boolean): readonly string[] => [
 export default function AboutPage() {
   const engine = loadEngineInfo();
   const conf = loadConformance();
+  const headline = loadConformance10k();
   return (
     <main id="main" tabIndex={-1} className="mx-auto max-w-3xl px-4 py-8 sm:px-6">
       <h1 className="m-0 text-4xl font-bold">About Anomaly Zoo</h1>
@@ -54,13 +55,13 @@ export default function AboutPage() {
           Limits
         </h2>
         <ol className="m-0 list-decimal space-y-2 pl-6">
-          {limits(!conf.readUncommitted.dirtyReadObserved).map((l) => (
+          {limits(!headline.readUncommitted.dirtyReadObserved).map((l) => (
             <li key={l}>{l}</li>
           ))}
         </ol>
       </section>
 
-      {SHOW_CONFORMANCE_SECTION ? <ConformanceSection conf={conf} /> : null}
+      {SHOW_CONFORMANCE_SECTION ? <ConformanceSection conf={conf} headline={headline} /> : null}
 
       <section aria-labelledby="faq-h" className="mt-10">
         <h2 id="faq-h" className="m-0 mb-2 text-2xl font-semibold">

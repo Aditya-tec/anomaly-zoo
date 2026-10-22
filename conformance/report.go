@@ -163,9 +163,20 @@ type Corpus struct {
 	NoDelete       bool   `json:"noDelete"`
 }
 
-// Report is web/public/conformance.json.
+// Provenance says which run produced a report that was copied into the repository from an artifact.
+type Provenance struct {
+	Source   string `json:"source"` // e.g. GitHub Actions workflow and run id
+	RunID    string `json:"runId"`
+	RunURL   string `json:"runUrl"`
+	Commit   string `json:"commit"`   // the commit the run tested
+	Date     string `json:"date"`     // UTC date the run started
+	Artifact string `json:"artifact"` // artifact the file was taken from
+}
+
+// Report is web/public/conformance.json (and, with Provenance set, conformance-10k.json).
 type Report struct {
 	SchemaVersion    int                    `json:"schemaVersion"`
+	Provenance       *Provenance            `json:"provenance,omitempty"`
 	EngineVersion    string                 `json:"engineVersion"`
 	PostgresVersion  string                 `json:"postgresVersion"`
 	Corpus           Corpus                 `json:"corpus"`

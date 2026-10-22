@@ -94,3 +94,24 @@ test("a stale divergence count (total or 'cause not yet established') fails; the
   ];
   for (const s of fresh) assert.deepEqual(checkText("t.md", s, "copy", rec, new Set(), perSource).filter((p) => /conformance\.json has/.test(p)), [], s);
 });
+
+test("conformance figures must name which report they come from, and be in that report", () => {
+  const conf = new Set(["415", "434", "500"]);
+  const conf10k = new Set(["8294", "8623", "10000"]);
+  const perSource = { conf, conf10k, confAll: new Set([...conf, ...conf10k]), logs: new Set(["20000"]) };
+  const rec = new Set([...perSource.confAll, "20000"]);
+  const run = (t, kind = "draft") => checkText("t.md", t, kind, rec, new Set(), perSource);
+  // right file
+  assert.deepEqual(run("8,294 of 8,623 identical [source: web/public/conformance-10k.json, random.RC]."), []);
+  assert.deepEqual(run("415 of 434 identical [source: web/public/conformance.json, random.RC]."), []);
+  assert.deepEqual(run("8,294 of 8,623 identical ([conformance-10k.json](web/public/conformance-10k.json)).", "readme"), []);
+  // a 500-report figure cited to the 10k file, and the reverse
+  assert.ok(run("415 of 434 identical [source: web/public/conformance-10k.json].").some((p) => /415 is cited to conformance-10k\.json but is not in it/.test(p)));
+  assert.ok(run("8,294 of 8,623 identical [source: web/public/conformance.json].").some((p) => /8294 is cited to conformance\.json but is not in it/.test(p)));
+  // a figure with no citation naming a conformance file
+  assert.ok(run("8,294 of 8,623 identical [source: docs/PROGRESS.md].").some((p) => /8294 is cited to the logs but is not in it/.test(p)));
+  assert.ok(run("Identical on 8,294 of 8,623.\n\nOne more. [source: web/public/conformance-10k.json]").some((p) => /no \[source/.test(p) || /8294/.test(p)));
+  assert.ok(run("First [source: web/public/conformance-10k.json] then 8,294 trailing.").some((p) => /8294 does not name conformance\.json or conformance-10k\.json/.test(p)));
+  // "conformance-10k.json" is not mistaken for "conformance.json"
+  assert.equal(run("x [source: web/public/conformance-10k.json]").length, 0);
+});

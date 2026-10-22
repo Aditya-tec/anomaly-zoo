@@ -91,3 +91,23 @@ export function loadConformance(): Conformance {
   }
   return conformanceCache;
 }
+
+
+let headlineCache: Conformance | null = null;
+
+/**
+ * The 10,000-schedule nightly run committed as public/conformance-10k.json (the headline sample on the About
+ * page). It must say which run produced it and describe the shipped engine, or the build fails.
+ */
+export function loadConformance10k(): Conformance {
+  if (!headlineCache) {
+    const conf = parseConformance(JSON.parse(readFileSync(join(PUBLIC, "conformance-10k.json"), "utf8")));
+    if (!conf.provenance) throw new Error("conformance-10k.json must record the run that produced it (provenance)");
+    const engine = loadEngineInfo();
+    if (conf.engineVersion !== engine.engineVersion) {
+      throw new Error(`conformance-10k.json is for engine ${conf.engineVersion}, but the shipped engine is ${engine.engineVersion}: re-run the nightly conformance workflow`);
+    }
+    headlineCache = conf;
+  }
+  return headlineCache;
+}

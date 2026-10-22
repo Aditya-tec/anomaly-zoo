@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { PG_LEVELS, parseConformance, percent, pgBadgeFor, pgBadgesForScenario, type Conformance } from "@/lib/conformance";
+import { PG_LEVELS, aboutPercent, parseConformance, percent, pgBadgeFor, pgBadgesForScenario, type Conformance } from "@/lib/conformance";
 import { outcomeFromInvariant, outcomeLabel, pgBadgeView } from "@/lib/outcomes";
 import { PgBadge } from "@/components/PgBadge";
 import { ConformanceSection } from "@/components/ConformanceSection";
@@ -115,7 +115,16 @@ describe("percent", () => {
 
 describe("ConformanceSection shows the file and nothing else", () => {
   const c = fixture();
-  const html = renderToStaticMarkup(<ConformanceSection conf={c} />);
+  // The headline sample is the fixture; the PR-gate sample is a different, smaller corpus.
+  const gate = fixture();
+  gate.corpus.randomPerLevel = 7;
+  gate.random.SER.engineSerializable = 4;
+  const withProv = (x: Conformance): Conformance => ({
+    ...x,
+    provenance: { source: "test", runId: "12345", runUrl: "https://example.test/runs/12345", commit: "abcdef0123456789", date: "2099-01-02", artifact: "a" },
+  });
+  const head = withProv(c);
+  const html = renderToStaticMarkup(<ConformanceSection conf={gate} headline={head} />);
 
   it("states both versions and the corpus size from the file", () => {
     expect(html).toContain(`>${c.engineVersion}<`);
@@ -128,7 +137,7 @@ describe("ConformanceSection shows the file and nothing else", () => {
       const t = c.random[lv];
       const row = html.slice(html.indexOf(`<tr data-level="${lv}">`)).split("</tr>")[0]!;
       expect(row).toContain(`${t.schedules}</td>`);
-      expect(row).toContain(`${t.identical} (${percent(t.identical, t.compared)})`);
+      expect(row).toContain(`${t.identical} (${aboutPercent(t.identical, t.compared)})`);
       expect(row).toContain(`${t.noRaceIdentical} of ${t.noRaceCompared} (${percent(t.noRaceIdentical, t.noRaceCompared)})`);
       expect(row).toContain(`${t.deadlockClassAgreed} of ${t.deadlockSchedules}`);
     }
@@ -159,7 +168,7 @@ describe("ConformanceSection shows the file and nothing else", () => {
     const hostile = fixture();
     hostile.knownDivergences[0]!.cause = '<img src=x onerror="alert(1)"> cause not yet established';
     hostile.knownDivergences[0]!.schedule = "<script>alert(1)</script>\nT1 BEGIN";
-    const out = renderToStaticMarkup(<ConformanceSection conf={hostile} />);
+    const out = renderToStaticMarkup(<ConformanceSection conf={gate} headline={hostile} />);
     expect(out).not.toContain("<img");
     expect(out).not.toContain("<script");
     expect(out).toContain("&lt;img");
@@ -170,9 +179,25 @@ describe("ConformanceSection shows the file and nothing else", () => {
     expect(html).toContain("PostgreSQL has no read-uncommitted");
     const dirty = fixture();
     dirty.readUncommitted.dirtyReadObserved = true;
-    const out = renderToStaticMarkup(<ConformanceSection conf={dirty} />);
+    const out = renderToStaticMarkup(<ConformanceSection conf={gate} headline={dirty} />);
     expect(out).not.toContain("has no read-uncommitted");
     expect(out).toContain("showed a dirty read");
+  });
+
+  it("names the headline run (id, commit, date, file) and labels the PR-gate sample separately", () => {
+    expect(html).toContain('data-testid="conf-run-id">12345<');
+    expect(html).toContain('data-testid="conf-run-commit">abcdef0<');
+    expect(html).toContain('data-testid="conf-run-date">2099-01-02<');
+    expect(html).toContain("conformance-10k.json");
+    expect(html).toContain('data-testid="conf-random-gate"');
+    expect(html).toContain('data-testid="conf-gate-per-level">7<');
+    expect(html).toContain("PR-gate sample");
+    expect(html).toContain("PostgreSQL&#x27;s own result varies when several statements wait on the same lock");
+  });
+
+  it("keeps the subset label on both tables and in the note", () => {
+    const label = "subset chosen after the fact to explain the differences, not an independent result";
+    expect(html.split(label).length - 1).toBeGreaterThanOrEqual(3);
   });
 
   it("reports the harness self-check from the file", () => {

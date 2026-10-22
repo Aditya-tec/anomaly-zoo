@@ -10,4 +10,4 @@ Candidates named in the plan: r/PostgreSQL, r/programming. Before posting anywhe
 
 Suggested short text, if the rules allow a text post (adapt it; keep the limits):
 
-> I built a small engine that replays isolation anomalies step by step (write skew, lost update, phantom, ...) and lets you flip the isolation level. It was compared with PostgreSQL 16.15 on 500 random schedules per level [source: web/public/conformance.json, corpus.randomPerLevel]; the differences are documented, and two causes are still open. It is a simplified model, not a database. Feedback welcome, especially on anything it gets wrong.
+> I built a small engine that replays isolation anomalies step by step (write skew, lost update, phantom, ...) and lets you flip the isolation level. It was compared with PostgreSQL 16.15 on 10,000 random schedules per level, from one nightly run [source: web/public/conformance-10k.json, corpus.randomPerLevel]; the differences are documented, and three causes are still open. It is a simplified model, not a database. Feedback welcome, especially on anything it gets wrong.

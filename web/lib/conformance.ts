@@ -77,8 +77,19 @@ export interface ConfReadUncommitted {
   sameHistoryAsReadCommitted: boolean;
 }
 
+export interface Provenance {
+  source: string;
+  runId: string;
+  runUrl: string;
+  commit: string;
+  date: string;
+  artifact: string;
+}
+
 export interface Conformance {
   schemaVersion: number;
+  /** Present on a report copied from a workflow artifact (conformance-10k.json): which run produced it. */
+  provenance?: Provenance;
   engineVersion: string;
   postgresVersion: string;
   corpus: { seedBase: number; randomPerLevel: number; noDelete: boolean };
@@ -141,6 +152,18 @@ function totals(v: unknown, level: PgLevel): ConfTotals {
   return { level, ...(t as Omit<ConfTotals, "level">) };
 }
 
+function provenance(v: unknown): Provenance {
+  const o = obj(v, "provenance");
+  return {
+    source: str(o, "source", "provenance"),
+    runId: str(o, "runId", "provenance"),
+    runUrl: str(o, "runUrl", "provenance"),
+    commit: str(o, "commit", "provenance"),
+    date: str(o, "date", "provenance"),
+    artifact: str(o, "artifact", "provenance"),
+  };
+}
+
 export function parseConformance(raw: unknown): Conformance {
   const o = obj(raw, "root");
   if (o["schemaVersion"] !== 1) throw new Error("conformance.json: unsupported schemaVersion");
@@ -187,6 +210,7 @@ export function parseConformance(raw: unknown): Conformance {
   });
   return {
     schemaVersion: 1,
+    ...(o["provenance"] === undefined ? {} : { provenance: provenance(o["provenance"]) }),
     engineVersion: str(o, "engineVersion", "root"),
     postgresVersion: str(o, "postgresVersion", "root"),
     corpus: { seedBase: num(corpus, "seedBase", "corpus"), randomPerLevel: num(corpus, "randomPerLevel", "corpus"), noDelete: bool(corpus, "noDelete", "corpus") },
@@ -245,4 +269,10 @@ export function pgBadgesForScenario(conf: Conformance, scenario: string): Partia
 export function percent(n: number, d: number, digits = 1): string {
   if (d === 0) return "n/a";
   return `${((100 * n) / d).toFixed(digits)}%`;
+}
+
+/** "about 96.2%": the percentage figures that vary from run to run are always shown with "about". */
+export function aboutPercent(n: number, d: number, digits = 1): string {
+  const p = percent(n, d, digits);
+  return p === "n/a" ? p : `about ${p}`;
 }

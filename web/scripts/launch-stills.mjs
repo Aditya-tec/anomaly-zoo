@@ -3,7 +3,7 @@
 //   how-verified.png, engine-diagram.png          the verification diagram (measured numbers) and how the engine works
 //   carousel-1-bug.png, carousel-2-fix.png, carousel-3-proof.png   1080 x 1350
 // Run from web/ after `npm run build`:  node scripts/launch-stills.mjs
-// Numbers come from web/public/conformance.json and docs/PROGRESS.md at run time; if the
+// Numbers come from web/public/conformance-10k.json (the headline sample) and docs/PROGRESS.md at run time; if the
 // sentence in PROGRESS.md that carries the oracle numbers changes, this script stops instead of guessing.
 import { spawn } from "node:child_process";
 import { mkdirSync, readFileSync } from "node:fs";
@@ -17,7 +17,8 @@ const OUT = join(root, "docs", "launch");
 mkdirSync(OUT, { recursive: true });
 
 // ---- numbers: recorded sources only ----
-const conf = JSON.parse(readFileSync(join(root, "web", "public", "conformance.json"), "utf8"));
+const conf = JSON.parse(readFileSync(join(root, "web", "public", "conformance-10k.json"), "utf8"));
+if (!conf.provenance) throw new Error("conformance-10k.json must record the run it came from");
 const progress = readFileSync(join(root, "docs", "PROGRESS.md"), "utf8");
 const ac42 = progress.split("\n").find((l) => l.includes("AC4.2"));
 if (!ac42 || !/20,000 SER schedules/.test(ac42) || !/200,000 run locally/.test(ac42) || !/0 oracle rejections/.test(ac42)) {
@@ -30,11 +31,11 @@ const lines = {
   oracleDefault: "20,000 random schedules per level in every test run",
   oracleLong: "200,000 Serializable schedules in one local run",
   oracleResult: "0 histories rejected by the oracle",
-  rc: `Read Committed: ${R.RC.identical} of ${R.RC.compared} identical (${pct(R.RC.identical, R.RC.compared)})`,
-  si: `Snapshot Isolation: ${R.SI.identical} of ${R.SI.compared} identical (${pct(R.SI.identical, R.SI.compared)})`,
+  rc: `Read Committed: ${R.RC.identical} of ${R.RC.compared} identical (about ${pct(R.RC.identical, R.RC.compared)})`,
+  si: `Snapshot Isolation: ${R.SI.identical} of ${R.SI.compared} identical (about ${pct(R.SI.identical, R.SI.compared)})`,
   noRace: `For context only: with no two statements blocked at once, ${R.RC.noRaceIdentical} of ${R.RC.noRaceCompared} (RC) and ${R.SI.noRaceIdentical} of ${R.SI.noRaceCompared} (SI), a subset chosen after the fact to explain the differences, not an independent result`,
-  ser: `Serializable: both sides serializable in ${R.SER.engineSerializable} of ${R.SER.schedules}; same aborted set in ${pct(R.SER.abortSetsIdentical, R.SER.schedules)}`,
-  corpus: `${f(conf.corpus.randomPerLevel)} random schedules per level + ${conf.canned.length} canned scenarios, PostgreSQL ${conf.postgresVersion.split(" ")[0]}`,
+  ser: `Serializable: both sides serializable in ${R.SER.engineSerializable} of ${R.SER.schedules}; same aborted set in about ${pct(R.SER.abortSetsIdentical, R.SER.schedules)}`,
+  corpus: `${f(conf.corpus.randomPerLevel)} random schedules per level + ${conf.canned.length} canned scenarios, PostgreSQL ${conf.postgresVersion.split(" ")[0]} (nightly run ${conf.provenance.runId}, commit ${conf.provenance.commit.slice(0, 7)}, ${conf.provenance.date}); "about" because PostgreSQL's own result varies when several statements wait on the same lock`,
   divergences: `${conf.knownDivergences.length} differences documented, each with a minimal schedule`,
 };
 
@@ -108,7 +109,7 @@ function diagramHtml(w, h, portrait) {
     ${arrow.replace(portrait ? "&darr;" : "&rarr;", portrait ? "&harr;" : "&harr;")}
     ${box(`PostgreSQL ${conf.postgresVersion.split(" ")[0]}`, `<p>${lines.rc}</p><p>${lines.si}</p><p style="font-size:0.8em;color:#4d5561;font-style:italic">${lines.noRace}</p><p>${lines.ser}</p><p>${lines.divergences}</p>`, "#a04800")}
   </div>
-  <div class="src">Sources: docs/PROGRESS.md (oracle runs), web/public/conformance.json (PostgreSQL comparison). Differences are listed on the About page.</div>`;
+  <div class="src">Sources: docs/PROGRESS.md (oracle runs), web/public/conformance-10k.json (PostgreSQL comparison, one nightly run). Differences are listed on the About page.</div>`;
 }
 async function diagram(file, w, h, portrait) {
   const ctx = await browser.newContext({ viewport: { width: w, height: h }, deviceScaleFactor: portrait ? 1 : 1.5 });
