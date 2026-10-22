@@ -127,7 +127,7 @@ jobs:
       - name: Conformance harness (canned scenarios, then 500 random schedules per level)
         run: |
           set -o pipefail
-          go run ./cmd/azoo-conformance -random 500 -workers 4 -show 100 -out "$RUNNER_TEMP/conformance.json" | tee "$RUNNER_TEMP/conformance-report.txt"
+          go run ./cmd/azoo-conformance -random 500 -workers 4 -show 100 -summary "$GITHUB_STEP_SUMMARY" -out "$RUNNER_TEMP/conformance.json" | tee "$RUNNER_TEMP/conformance-report.txt"
 
       - name: Report is for this engine version
         run: |

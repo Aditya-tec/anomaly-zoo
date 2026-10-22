@@ -668,7 +668,8 @@
       "cause": "The same page-level read locks: PostgreSQL finds a dependency between two transactions that read and wrote different keys on one page, so a different transaction is the one that must be aborted. The engine sees no such dependency and aborts another transaction for an ordinary reason (in the smallest schedule, a concurrent update).",
       "causeEstablished": true,
       "signatures": [
-        "SER:same-count:*"
+        "SER:same-count:*",
+        "SER:more:hint/page-locks:*"
       ],
       "regression": "ser-different-victim.azs",
       "schedule": "scenario ser-different-victim\ntitle \"Serializable: a different transaction is aborted\"\nstory \"T1 reads p:3 (absent) and T3 writes q:2, different keys. This engine sees no dependency, so T2's write to q:1, which waits for T1, fails as a concurrent update once T1 commits. PostgreSQL aborts T1 at commit instead: its read locks are per index page, and p:3 and q:2 share one.\"\nschedule:\n  T3 BEGIN\n  T1 BEGIN\n  T1 PUT q:1 = 51\n  T1 READ p:3 AS v1_1\n  T3 PUT q:2 = 92\n  T3 COMMIT\n  T2 BEGIN\n  T2 SCAN q: AS v2_2\n  T2 PUT q:1 = 1\n  T1 COMMIT\n  T2 ABORT\n",
@@ -692,6 +693,48 @@
       "occurrences": {
         "SER": 21
       }
+    },
+    {
+      "id": "ser-no-writes-in-edge",
+      "title": "PostgreSQL aborts nobody when the transaction at the start of the dependency wrote nothing",
+      "levels": [
+        "SER"
+      ],
+      "cause": "In the smallest schedule the transaction at the start of the dependency chain (T2) only reads. This engine has no read-only optimisation (spec 4.8) and aborts T1; PostgreSQL aborts nobody. Control: with one harmless write added to T2 before its first data operation, PostgreSQL aborts T1 as the engine does.",
+      "causeEstablished": true,
+      "signatures": [
+        "SER:more:hint/no-writes-in-edge:*"
+      ],
+      "regression": "ser-no-writes-in-edge.azs",
+      "schedule": "scenario ser-no-writes-in-edge\ntitle \"Serializable: a transaction that writes nothing sits in the dependency\"\nstory \"T2 only reads. T1 read p:3 and T3 then wrote and committed it; T1 then wrote q:1, which T2 had scanned. This engine sees T2 to T1 to T3 with T3 committed first and aborts T1. PostgreSQL aborts nobody. With one harmless write added to T2, PostgreSQL aborts T1 as the engine does.\"\nschedule:\n  T2 BEGIN\n  T1 BEGIN\n  T3 BEGIN\n  T1 READ q:2 AS v1_0\n  T3 PUT p:3 = 20\n  T2 READ q:2 AS v2_3\n  T3 COMMIT\n  T2 SCAN q: AS v2_4\n  T2 COMMIT\n  T1 READ p:3 AS v1_5\n  T1 PUT q:1 = 59\n  T1 ABORT\n"
+    },
+    {
+      "id": "ser-error-deferred-to-commit",
+      "title": "PostgreSQL does not raise the serialization error at the next statement; the engine does",
+      "levels": [
+        "SER"
+      ],
+      "cause": "This engine dooms a transaction when a dependency structure completes and aborts it at its very next statement (spec 4.8). In the smallest schedule PostgreSQL raised no error before the transaction rolled back by itself. Control: with that rollback turned into a commit, PostgreSQL aborts the same transaction as the engine, at the commit.",
+      "causeEstablished": true,
+      "signatures": [
+        "SER:more:hint/error-deferred-to-commit:*"
+      ],
+      "regression": "ser-error-deferred-to-commit.azs",
+      "schedule": "scenario ser-error-deferred-to-commit\ntitle \"Serializable: the error comes at commit, not at the next statement\"\nstory \"T1 and T2 depend on each other; T1 commits, so T2 can no longer commit. This engine aborts T2 at its next statement. PostgreSQL raises no error before T2 rolls back by itself. If T2 commits instead, PostgreSQL aborts T2 at the commit.\"\nschedule:\n  T2 BEGIN\n  T2 SCAN q: AS v2_0\n  T2 PUT p:1 = 1\n  T1 BEGIN\n  T1 READ p:1 AS v1_2\n  T1 PUT q:2 = 35\n  T1 COMMIT\n  T2 READ q:1 AS v2_3\n  T2 ABORT\n"
+    },
+    {
+      "id": "ser-pivot-before-in-ends",
+      "title": "The engine aborts the middle transaction before the first one has ended; PostgreSQL aborts nobody",
+      "levels": [
+        "SER"
+      ],
+      "cause": "cause not yet established",
+      "causeEstablished": false,
+      "signatures": [
+        "SER:more:hint/in-transaction-rolled-back:*"
+      ],
+      "regression": "ser-pivot-before-in-ends.azs",
+      "schedule": "scenario ser-pivot-before-in-ends\ntitle \"Serializable: the middle transaction is aborted before the first one ends\"\nstory \"T1 to T2 to T3, with T3 committing first and T1 still open when T2 commits. This engine aborts T2 as soon as T3 commits. PostgreSQL lets T2 commit, then T1 rolls back by itself and nobody is aborted. If T1 commits instead, PostgreSQL aborts T1, not T2. Why PostgreSQL decides at that point is not established.\"\nschedule:\n  T1 BEGIN\n  T3 BEGIN\n  T2 BEGIN\n  T1 READ q:1 AS v1_0\n  T2 SCAN p: AS v2_2\n  T2 PUT p:3 = 75\n  T3 PUT p:2 = 48\n  T1 SCAN p: AS v1_2\n  T1 PUT q:1 = 63\n  T3 COMMIT\n  T2 COMMIT\n  T1 ABORT\n"
     }
   ],
   "unexplained": []

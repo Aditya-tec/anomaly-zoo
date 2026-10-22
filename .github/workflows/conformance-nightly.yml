@@ -81,7 +81,7 @@ jobs:
           # Only actual mismatches are re-run (5 times); -rerun-race=false skips the
           # extra re-runs of matching schedules that CI does to measure PostgreSQL's variation.
           go run ./cmd/azoo-conformance -levels "$LEVEL" -random "$SCHEDULES" -workers 6 -stability 10 \
-            -rerun-race=false -show 200 -out "$RUNNER_TEMP/conformance-shard-$LEVEL.json" \
+            -rerun-race=false -show 200 -summary "$GITHUB_STEP_SUMMARY" -out "$RUNNER_TEMP/conformance-shard-$LEVEL.json" \
             | tee "$RUNNER_TEMP/conformance-shard-$LEVEL.txt"
 
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -128,7 +128,7 @@ jobs:
           done
           go run ./cmd/azoo-conformance \
             -merge "$RUNNER_TEMP/shards/conformance-shard-RC.json,$RUNNER_TEMP/shards/conformance-shard-SI.json,$RUNNER_TEMP/shards/conformance-shard-SER.json" \
-            -out "$RUNNER_TEMP/conformance-nightly.json" | tee "$RUNNER_TEMP/conformance-nightly.txt"
+            -summary "$GITHUB_STEP_SUMMARY" -out "$RUNNER_TEMP/conformance-nightly.json" | tee "$RUNNER_TEMP/conformance-nightly.txt"
 
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
