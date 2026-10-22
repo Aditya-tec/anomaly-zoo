@@ -15,6 +15,7 @@ The table is everything `npm ci --omit=dev` installs for `web/`. Of these, only 
 | Package | Version | License | Note |
 |---|---|---|---|
 | @emnapi/runtime | 1.11.3 | MIT | optional |
+| @fontsource/instrument-serif | 5.3.0 | OFL-1.1 | direct dependency |
 | @img/colour | 1.1.0 | MIT | optional |
 | @img/sharp-darwin-arm64 | 0.35.5 | Apache-2.0 | optional |
 | @img/sharp-darwin-x64 | 0.35.5 | Apache-2.0 | optional |
