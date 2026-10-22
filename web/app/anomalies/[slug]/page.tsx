@@ -46,7 +46,7 @@ export default async function AnomalyPage({ params }: Params) {
         </a>
       </p>
       <header className="max-w-3xl">
-        <h1 className="m-0 text-3xl font-bold sm:text-4xl">{scenario.title}</h1>
+        <h1 className="m-0">{scenario.title}</h1>
         <p className="mt-3 mb-1 text-lg">{scenario.story}</p>
         <p className="m-0 text-sm text-muted">An illustration, not an incident report.</p>
       </header>
@@ -62,14 +62,14 @@ export default async function AnomalyPage({ params }: Params) {
       <div className="mt-12 grid max-w-3xl gap-8">
         {why ? (
           <section aria-labelledby="why-h">
-            <h2 id="why-h" className="m-0 mb-2 text-2xl font-semibold">
+            <h2 id="why-h" className="m-0 mb-2">
               Why the levels differ
             </h2>
             <p className="m-0">{why}</p>
           </section>
         ) : null}
         <section aria-labelledby="practice-h">
-          <h2 id="practice-h" className="m-0 mb-2 text-2xl font-semibold">
+          <h2 id="practice-h" className="m-0 mb-2">
             In practice
           </h2>
           <p className="mt-0 mb-2">{IN_PRACTICE_INTRO}</p>

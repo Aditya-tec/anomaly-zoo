@@ -7,7 +7,7 @@ export function VerdictPanel({ trace }: { trace: Trace }) {
   const label = outcomeLabel(o);
   return (
     <section className="card p-3" aria-labelledby="verdict-h" data-testid="verdict-panel">
-      <h2 id="verdict-h" className="m-0 mb-2 text-base font-semibold">
+      <h2 id="verdict-h" className="m-0 mb-2">
         {hasInvariants ? "Invariant and verdict" : "Verdict"}
       </h2>
       {hasInvariants ? (

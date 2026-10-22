@@ -134,7 +134,7 @@ export function Playground({ examples }: { examples: Example[] }) {
       ) : null}
 
       <section aria-labelledby="scenario-h" className="space-y-3">
-        <h2 id="scenario-h" className="m-0 text-2xl font-semibold">
+        <h2 id="scenario-h" className="m-0">
           Scenario
         </h2>
         <label htmlFor="source" className="block text-sm text-muted">
@@ -173,7 +173,7 @@ export function Playground({ examples }: { examples: Example[] }) {
 
         {errors.length > 0 ? (
           <div className="card p-3" data-testid="source-errors" role="alert">
-            <h3 id="source-errors-h" className="m-0 mb-2 text-base font-semibold">
+            <h3 id="source-errors-h" className="m-0 mb-2">
               {errors.length === 1 ? "1 problem in the scenario" : `${errors.length} problems in the scenario`}
             </h3>
             <ul className="m-0 list-none space-y-1 p-0">
@@ -227,7 +227,7 @@ export function Playground({ examples }: { examples: Example[] }) {
       </section>
 
       <section aria-labelledby="results-h" aria-busy={running} data-testid="playground-results" className="space-y-4">
-        <h2 id="results-h" className="m-0 text-2xl font-semibold">
+        <h2 id="results-h" className="m-0">
           Results
         </h2>
         {results ? (

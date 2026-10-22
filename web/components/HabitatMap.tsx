@@ -67,7 +67,7 @@ export function HabitatMap({ data }: { data: HomeData }) {
         {data.rows.map((row, i) => (
           <li key={row.id} className="card map-card p-3">
             <p className="eyebrow m-0">No. {String(i + 1).padStart(2, "0")}</p>
-            <h3 className="m-0 mb-2 text-lg font-semibold">
+            <h3 className="m-0 mb-2">
               <a href={`/anomalies/${row.id}`} className="inline-flex min-h-11 items-center text-fg">
                 {row.name}
               </a>

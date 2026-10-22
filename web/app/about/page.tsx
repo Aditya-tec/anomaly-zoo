@@ -29,15 +29,15 @@ export default function AboutPage() {
   const headline = loadConformance10k();
   return (
     <main id="main" tabIndex={-1} className="mx-auto max-w-3xl px-4 py-8 sm:px-6">
-      <h1 className="m-0 text-4xl font-bold">About Anomaly Zoo</h1>
+      <h1 className="m-0">About Anomaly Zoo</h1>
 
       <section aria-labelledby="method-h" className="mt-8">
-        <h2 id="method-h" className="m-0 mb-2 text-2xl font-semibold">
+        <h2 id="method-h" className="m-0 mb-2">
           Methodology
         </h2>
         <p>Anomaly Zoo is a from-scratch MVCC engine written in Go using only the standard library. It runs scripted schedules of two or three transactions at four isolation levels and records every step as a trace.</p>
         <p>The habitat map is computed by running the engine and is asserted against expected results in continuous integration. These pages replay those recorded traces; the engine itself does not run in your browser here.</p>
-        <h3 className="mt-6 mb-2 text-lg font-semibold">The four levels</h3>
+        <h3 className="mt-6 mb-2">The four levels</h3>
         <dl className="m-0 space-y-3">
           {LEVELS.map((lv) => (
             <div key={lv}>
@@ -51,7 +51,7 @@ export default function AboutPage() {
       </section>
 
       <section id="limits" aria-labelledby="limits-h" className="mt-10 scroll-mt-4">
-        <h2 id="limits-h" className="m-0 mb-2 text-2xl font-semibold">
+        <h2 id="limits-h" className="m-0 mb-2">
           Limits
         </h2>
         <ol className="m-0 list-decimal space-y-2 pl-6">
@@ -64,19 +64,19 @@ export default function AboutPage() {
       {SHOW_CONFORMANCE_SECTION ? <ConformanceSection conf={conf} headline={headline} /> : null}
 
       <section aria-labelledby="faq-h" className="mt-10">
-        <h2 id="faq-h" className="m-0 mb-2 text-2xl font-semibold">
+        <h2 id="faq-h" className="m-0 mb-2">
           FAQ
         </h2>
-        <h3 className="mt-4 mb-1 text-lg font-semibold">Does this behave exactly like my database?</h3>
+        <h3 className="mt-4 mb-1">Does this behave exactly like my database?</h3>
         <p className="m-0">Vendor behaviors differ; this explains concepts and does not replace your database&apos;s documentation. Check your own database&apos;s documentation: behavior differs between vendors and versions.</p>
-        <h3 className="mt-4 mb-1 text-lg font-semibold">Why is Read Uncommitted included?</h3>
+        <h3 className="mt-4 mb-1">Why is Read Uncommitted included?</h3>
         <p className="m-0">{LEVEL_DEFINITIONS.RU}</p>
-        <h3 className="mt-4 mb-1 text-lg font-semibold">Why can Serializable abort a transaction?</h3>
+        <h3 className="mt-4 mb-1">Why can Serializable abort a transaction?</h3>
         <p className="m-0">{LEVEL_DEFINITIONS.SER}</p>
       </section>
 
       <section aria-labelledby="privacy-h" className="mt-10">
-        <h2 id="privacy-h" className="m-0 mb-2 text-2xl font-semibold">
+        <h2 id="privacy-h" className="m-0 mb-2">
           Privacy
         </h2>
         <p className="m-0">
@@ -85,7 +85,7 @@ export default function AboutPage() {
       </section>
 
       <section aria-labelledby="verify-h" className="mt-10">
-        <h2 id="verify-h" className="m-0 mb-2 text-2xl font-semibold">
+        <h2 id="verify-h" className="m-0 mb-2">
           Verify the engine build
         </h2>
         <p className="mt-0">
@@ -97,7 +97,7 @@ export default function AboutPage() {
       </section>
 
       <section aria-labelledby="links-h" className="mt-10">
-        <h2 id="links-h" className="m-0 mb-2 text-2xl font-semibold">
+        <h2 id="links-h" className="m-0 mb-2">
           Links
         </h2>
         <ul className="m-0 list-disc pl-6">

@@ -116,7 +116,7 @@ export function TraceViewer({ traces, defaultLevel, pg, syncUrl = true }: Props)
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
         <div className="space-y-3">
-          <h2 className="m-0 text-lg font-semibold">Timeline</h2>
+          <h2 className="m-0">Timeline</h2>
           <StepControls step={stepper.step} max={max} playing={stepper.playing} send={send} />
           <p className="m-0 text-sm text-muted">Keyboard: ← and → to step, Space to play or pause, R to reset.</p>
           <Timeline trace={trace} step={stepper.step} />

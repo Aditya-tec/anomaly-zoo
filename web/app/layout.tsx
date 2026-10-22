@@ -17,12 +17,12 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  colorScheme: "light dark",
+  colorScheme: "dark light",
 };
 
-// Applies a saved theme before first paint so there is no flash. It is an
+// Applies the saved paper theme before first paint so there is no flash. It is an
 // inline script, so the build hashes it into the page CSP (scripts/inject-csp.mjs).
-const THEME_BOOT = `try{var t=window.localStorage.getItem("azoo-theme");if(t==="light"||t==="dark"){document.documentElement.setAttribute("data-theme",t)}}catch(e){}`;
+const THEME_BOOT = `try{var t=window.localStorage.getItem("azoo-theme");if(t==="light"){document.documentElement.setAttribute("data-theme",t)}}catch(e){}`;
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (

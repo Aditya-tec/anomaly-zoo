@@ -1,13 +1,16 @@
 import { SHOW_PLAYGROUND, SITE_NAME } from "@/lib/site";
 import { ThemeToggle } from "./ThemeToggle";
 
-const navLink = "inline-flex min-h-11 items-center rounded-md px-3 font-medium text-fg underline-offset-4 hover:underline";
+const navLink = "nav-link inline-flex min-h-11 items-center px-2 font-medium";
 
 export function SiteHeader() {
   return (
-    <header className="border-b border-border bg-surface">
+    <header className="site-header">
       <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-x-4 gap-y-1 px-4 py-2 sm:px-6">
-        <a href="/" className="inline-flex min-h-11 items-center font-mono text-lg font-bold tracking-tight text-fg no-underline">
+        <a href="/" className="brand cursor inline-flex min-h-11 items-center text-lg">
+          <span className="ps hidden sm:inline" aria-hidden="true">
+            visitor@zoo:~${" "}
+          </span>
           {SITE_NAME}
         </a>
         <div className="flex flex-wrap items-center gap-1">

@@ -39,7 +39,7 @@ export function RerunPanel({ source, published, playgroundHref }: Props) {
 
   return (
     <section aria-labelledby="rerun-h" className="space-y-3" data-testid="rerun-panel">
-      <h2 id="rerun-h" className="m-0 text-2xl font-semibold">
+      <h2 id="rerun-h" className="m-0">
         Run it yourself
       </h2>
       <p className="m-0">

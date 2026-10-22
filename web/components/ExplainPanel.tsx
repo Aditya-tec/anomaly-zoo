@@ -7,7 +7,7 @@ export function ExplainPanel({ trace, step }: { trace: Trace; step: number }) {
   const x = e ? explainEvent(trace, e) : explainStart(trace);
   return (
     <section className="card p-3" aria-labelledby="explain-h" data-testid="explain-panel">
-      <h2 id="explain-h" className="m-0 mb-2 text-base font-semibold">
+      <h2 id="explain-h" className="m-0 mb-2">
         What just happened
       </h2>
       <div aria-live="polite" aria-atomic="true">

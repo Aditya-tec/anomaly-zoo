@@ -17,7 +17,7 @@ export function StorePanel({ trace, step }: { trace: Trace; step: number }) {
   return (
     <section className="card p-3" aria-labelledby="store-h" data-testid="store-panel">
       <div className="flex items-center justify-between gap-2">
-        <h2 id="store-h" className="m-0 text-base font-semibold">
+        <h2 id="store-h" className="m-0">
           Store
         </h2>
         <button type="button" className="btn sm:hidden" aria-expanded={open} aria-controls="store-body" onClick={() => setOpen((o) => !o)}>

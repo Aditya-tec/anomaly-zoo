@@ -26,7 +26,7 @@ export function CompareStrip({ traces, level, step, onPick }: Props) {
   return (
     <section aria-labelledby="compare-h" data-testid="compare-strip">
       <div className="flex items-center justify-between gap-2">
-        <h2 id="compare-h" className="m-0 text-lg font-semibold">
+        <h2 id="compare-h" className="m-0">
           Compare the four levels
         </h2>
         <button type="button" className="btn" aria-expanded={open} aria-controls="compare-body" onClick={() => setOpen((o) => !o)}>

@@ -105,7 +105,7 @@ export function ConformanceSection({ conf, headline }: { conf: Conformance; head
 
   return (
     <section id="conformance" aria-labelledby="conf-h" className="mt-10 scroll-mt-4" data-testid="conformance">
-      <h2 id="conf-h" className="m-0 mb-2 text-2xl font-semibold">
+      <h2 id="conf-h" className="m-0 mb-2">
         Comparison with PostgreSQL
       </h2>
       <p>
@@ -130,7 +130,7 @@ export function ConformanceSection({ conf, headline }: { conf: Conformance; head
         . <strong>PR-gate sample:</strong> the <span data-testid="conf-gate-per-level">{conf.corpus.randomPerLevel}</span> random schedules per level that CI runs on every push (file <span className="mono">conformance.json</span>), shown separately below.
       </p>
 
-      <h3 className="mt-6 mb-2 text-lg font-semibold">The canned scenarios</h3>
+      <h3 className="mt-6 mb-2">The canned scenarios</h3>
       <p className="mt-0" data-testid="conf-canned-summary">
         The outcome is the same on both sides in {cannedSame} of {cannedCells.length} scenario-and-level pairs; {cannedIdentical} of them are identical statement by statement, in the final state and in which transactions aborted.
       </p>
@@ -166,7 +166,7 @@ export function ConformanceSection({ conf, headline }: { conf: Conformance; head
         </table>
       </div>
 
-      <h3 className="mt-6 mb-2 text-lg font-semibold">Random schedules: headline sample ({n} per level)</h3>
+      <h3 className="mt-6 mb-2">Random schedules: headline sample ({n} per level)</h3>
       <RandomTable conf={headline} testId="conf-random" caption="Random schedules compared with PostgreSQL per level, headline sample" />
       <p data-testid="conf-variance-note">
         Percentages marked &ldquo;about&rdquo; vary from run to run, because PostgreSQL&apos;s own result varies when several statements wait on the same lock; two nightly runs on identical seeds differed by 0.3 points at Read Committed. The &ldquo;no two statements blocked at once&rdquo; column is a {SUBSET_LABEL}.
@@ -175,10 +175,10 @@ export function ConformanceSection({ conf, headline }: { conf: Conformance; head
         When one commit or abort releases several waiting transactions at once, PostgreSQL lets them run concurrently, while this engine serves them in arrival order. The schedules that can differ are the ones where two statements were blocked at the same time; the measured differences are listed below.
       </p>
 
-      <h3 className="mt-6 mb-2 text-lg font-semibold">Random schedules: PR-gate sample ({conf.corpus.randomPerLevel} per level)</h3>
+      <h3 className="mt-6 mb-2">Random schedules: PR-gate sample ({conf.corpus.randomPerLevel} per level)</h3>
       <RandomTable conf={conf} testId="conf-random-gate" caption="Random schedules compared with PostgreSQL per level, PR-gate sample" />
 
-      <h3 className="mt-6 mb-2 text-lg font-semibold">Serializable</h3>
+      <h3 className="mt-6 mb-2">Serializable</h3>
       <ul className="m-0 list-disc space-y-1 pl-6" data-testid="conf-ser">
         <li>
           Serializable by the oracle (headline sample): engine <span data-field="engine-ser">{ser.engineSerializable}</span> of {ser.schedules}, PostgreSQL <span data-field="pg-ser">{ser.postgresSerializable}</span> of {ser.schedules}.
@@ -194,7 +194,7 @@ export function ConformanceSection({ conf, headline }: { conf: Conformance; head
         </li>
       </ul>
 
-      <h3 className="mt-6 mb-2 text-lg font-semibold">Measured differences</h3>
+      <h3 className="mt-6 mb-2">Measured differences</h3>
       {headline.knownDivergences.length === 0 ? (
         <p className="mt-0">No differences were found.</p>
       ) : (
@@ -220,14 +220,14 @@ export function ConformanceSection({ conf, headline }: { conf: Conformance; head
         </ol>
       )}
 
-      <h3 className="mt-6 mb-2 text-lg font-semibold">Read Uncommitted</h3>
+      <h3 className="mt-6 mb-2">Read Uncommitted</h3>
       <p className="mt-0" data-testid="conf-ru">
         {headline.readUncommitted.dirtyReadObserved
           ? `PostgreSQL showed a dirty read when asked for ${headline.readUncommitted.requested}.`
           : `PostgreSQL has no read-uncommitted. Asked for ${headline.readUncommitted.requested} on the dirty-read schedule, it showed no dirty read${headline.readUncommitted.sameHistoryAsReadCommitted ? " and produced the same history as READ COMMITTED" : ""}.`}
       </p>
 
-      <h3 className="mt-6 mb-2 text-lg font-semibold">How reliable is the comparison?</h3>
+      <h3 className="mt-6 mb-2">How reliable is the comparison?</h3>
       <p className="mt-0" data-testid="conf-harness">
         Running each canned scenario at each level {headline.harness.stabilityRepeats} times gave a different PostgreSQL history in {headline.harness.stabilityUnstable} of {headline.harness.stabilityPairs} cases. Of all {headline.harness.evaluations} comparisons in the headline run, {headline.harness.rerunMismatches} were re-run, and the re-runs disagreed with each other in {headline.harness.unstableReruns} of them.
       </p>
