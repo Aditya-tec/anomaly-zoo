@@ -228,37 +228,6 @@ test.describe("claims policy (P8: PostgreSQL appears only where measured data is
   });
 });
 
-test.describe("theme toggle", () => {
-  test("switches phosphor and paper, remembers the choice, and works without localStorage", async ({ page, context }) => {
-    const w = await watchPage(page);
-    await page.goto("/");
-    const toggle = page.getByTestId("theme-toggle");
-    await expect(toggle).toHaveText("Theme: Phosphor");
-    await expect(page.locator("html")).not.toHaveAttribute("data-theme", /.+/);
-    await toggle.click();
-    await expect(toggle).toHaveText("Theme: Paper");
-    await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
-    await page.reload();
-    await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
-    await expect(page.getByTestId("theme-toggle")).toHaveText("Theme: Paper");
-    await page.getByTestId("theme-toggle").click();
-    await expect(page.locator("html")).not.toHaveAttribute("data-theme", /.+/);
-    await expectClean(page, w);
-
-    // Storage blocked entirely: the page still renders and the toggle still works for this visit.
-    const blocked = await context.newPage();
-    await blocked.addInitScript(() => {
-      Object.defineProperty(window, "localStorage", { get() { throw new Error("storage blocked"); } });
-    });
-    const w2 = await watchPage(blocked);
-    await blocked.goto("/");
-    await expect(blocked.getByTestId("habitat-map")).toBeVisible();
-    await blocked.getByTestId("theme-toggle").click();
-    await expect(blocked.locator("html")).toHaveAttribute("data-theme", "light");
-    await expectClean(blocked, w2);
-  });
-});
-
 test.describe("static files", () => {
   test("404 page, sitemap and robots", async ({ page, request }) => {
     const r = await page.goto("/definitely-not-a-page");

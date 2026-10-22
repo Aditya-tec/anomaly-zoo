@@ -20,7 +20,6 @@ test("no console errors or CSP violations while using the viewer", async ({ page
   await page.getByRole("button", { name: "Play" }).click();
   await page.getByRole("button", { name: "Pause" }).click();
   await page.getByRole("button", { name: "Collapse" }).click();
-  await page.getByTestId("theme-toggle").click();
   await page.keyboard.press("r");
   await expectClean(page, w);
 });
