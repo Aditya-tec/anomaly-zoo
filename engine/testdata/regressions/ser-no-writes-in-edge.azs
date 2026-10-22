@@ -1,0 +1,16 @@
+scenario ser-no-writes-in-edge
+title "Serializable: a transaction that writes nothing sits in the dependency"
+story "T2 only reads. T1 read p:3 and T3 then wrote and committed it; T1 then wrote q:1, which T2 had scanned. This engine sees T2 to T1 to T3 with T3 committed first and aborts T1. PostgreSQL aborts nobody. With one harmless write added to T2, PostgreSQL aborts T1 as the engine does."
+schedule:
+  T2 BEGIN
+  T1 BEGIN
+  T3 BEGIN
+  T1 READ q:2 AS v1_0
+  T3 PUT p:3 = 20
+  T2 READ q:2 AS v2_3
+  T3 COMMIT
+  T2 SCAN q: AS v2_4
+  T2 COMMIT
+  T1 READ p:3 AS v1_5
+  T1 PUT q:1 = 59
+  T1 ABORT

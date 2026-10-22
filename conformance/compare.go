@@ -63,6 +63,8 @@ type Eval struct {
 	Unstable     bool     // some re-run's PG history differed from the first
 	RerunMatches int      // re-runs whose comparison agreed with the engine
 	RaceRisk     bool     // two statements were blocked at the same time (any run)
+	Hints        []string // SER only: control experiments that make PostgreSQL agree (see classify.go)
+	Shrunk       string   // SER only: the minimal schedule the hints were computed on (.azs source)
 	Variants     int      // distinct PostgreSQL histories over all runs of this evaluation
 }
 
@@ -253,7 +255,32 @@ func Evaluate(ctx context.Context, r *Runner, c Case, level trace.Level) (*Eval,
 		}
 	}
 	e.Variants = len(seen)
+	e.addHints(ctx, r, c, tr)
 	return e, nil
+}
+
+// addHints runs the control experiments for the one Serializable kind no divergence covers by shape
+// (the engine aborts more than PostgreSQL, no waiters raced). A failure to run them leaves no hint.
+func (e *Eval) addHints(ctx context.Context, r *Runner, c Case, tr *trace.Trace) {
+	if e.Level != trace.SER || !e.Mismatch || e.RaceRisk || e.Deadlock || SERKind(e) != "more" {
+		return
+	}
+	// The controls only mean something on a minimal schedule (on a full one several causes stack up and
+	// padding has nowhere to put filler rows), so shrink first, then classify the shrunk schedule.
+	small := ShrinkMismatch(ctx, r, c.SC, 3)
+	eng, str, err := RunEngine(small, trace.SER)
+	if err != nil {
+		return
+	}
+	pg, err := r.Run(ctx, small, trace.SER)
+	if err != nil {
+		return
+	}
+	h, err := SERHints(ctx, r, small, str, eng.SystemAborts(), pg.SystemAborts())
+	if err == nil {
+		e.Hints = h
+		e.Shrunk = dsl.Format(small)
+	}
 }
 
 func (e *Eval) abortsDiffer() bool {
@@ -305,3 +332,6 @@ func KindOf(engine, pg *History) string {
 	e := &Eval{Engine: engine, PG: pg}
 	return SERKind(e)
 }
+
+// AbortsString renders a history's system-aborted transactions, e.g. {T1:serialization}.
+func AbortsString(h *History) string { return fmtAborts(h.SystemAborts()) }

@@ -1,0 +1,16 @@
+scenario ser-pivot-before-in-ends
+title "Serializable: the middle transaction is aborted before the first one ends"
+story "T1 to T2 to T3, with T3 committing first and T1 still open when T2 commits. This engine aborts T2 as soon as T3 commits. PostgreSQL lets T2 commit, then T1 rolls back by itself and nobody is aborted. If T1 commits instead, PostgreSQL aborts T1, not T2. Why PostgreSQL decides at that point is not established."
+schedule:
+  T1 BEGIN
+  T3 BEGIN
+  T2 BEGIN
+  T1 READ q:1 AS v1_0
+  T2 SCAN p: AS v2_2
+  T2 PUT p:3 = 75
+  T3 PUT p:2 = 48
+  T1 SCAN p: AS v1_2
+  T1 PUT q:1 = 63
+  T3 COMMIT
+  T2 COMMIT
+  T1 ABORT

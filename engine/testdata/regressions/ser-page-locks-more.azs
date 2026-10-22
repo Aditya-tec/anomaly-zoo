@@ -1,0 +1,20 @@
+scenario ser-page-locks-more
+title "Serializable: PostgreSQL aborts T1, the engine's later aborts follow"
+story "T1 READ p:3 and T2 writing q:1 share an index page in PostgreSQL, so PostgreSQL aborts T1 at commit. This engine commits T1, and T3 and T4 then fail first-updater-wins on p:2, which PostgreSQL's T3 and T4 never meet. With filler rows that put the keys on different pages, PostgreSQL agrees with the engine."
+schedule:
+  T2 BEGIN
+  T1 BEGIN
+  T1 READ p:3 AS v1_0
+  T2 PUT q:1 = 44
+  T1 PUT p:2 = 1
+  T3 BEGIN
+  T4 BEGIN
+  T3 READ p:3 AS v3_1
+  T2 READ p:2 AS v2_1
+  T2 COMMIT
+  T4 SCAN q: AS v4_0
+  T1 COMMIT
+  T3 PUT p:2 = 1
+  T4 PUT p:2 = 77
+  T3 ABORT
+  T4 ABORT

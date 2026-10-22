@@ -1,0 +1,13 @@
+scenario ser-error-deferred-to-commit
+title "Serializable: the error comes at commit, not at the next statement"
+story "T1 and T2 depend on each other; T1 commits, so T2 can no longer commit. This engine aborts T2 at its next statement. PostgreSQL raises no error before T2 rolls back by itself. If T2 commits instead, PostgreSQL aborts T2 at the commit."
+schedule:
+  T2 BEGIN
+  T2 SCAN q: AS v2_0
+  T2 PUT p:1 = 1
+  T1 BEGIN
+  T1 READ p:1 AS v1_2
+  T1 PUT q:2 = 35
+  T1 COMMIT
+  T2 READ q:1 AS v2_3
+  T2 ABORT

@@ -100,6 +100,9 @@ func Signature(e *Eval) string {
 	kind := ""
 	if e.Level == trace.SER {
 		kind = SERKind(e) + ":"
+		if len(e.Hints) > 0 {
+			kind += "hint/" + e.Hints[0] + ":"
+		}
 	}
 	return string(e.Level) + ":" + kind + prefix + strings.Join(ks, "+")
 }
@@ -140,11 +143,17 @@ type HarnessInfo struct {
 
 // Unexplained is a reproducing mismatch no divergence covers.
 type Unexplained struct {
-	Case      string   `json:"case"`
-	Level     string   `json:"level"`
-	Signature string   `json:"signature"`
-	Diffs     []string `json:"diffs"`
-	Schedule  string   `json:"schedule"`
+	Case         string   `json:"case"`
+	Level        string   `json:"level"`
+	Signature    string   `json:"signature"`
+	Hints        []string `json:"hints,omitempty"`
+	Shrunk       string   `json:"shrunk,omitempty"` // minimal schedule the hints were computed on
+	EngineAborts string   `json:"engineAborts"`
+	PGAborts     string   `json:"postgresAborts"`
+	PGReasons    []string `json:"postgresReasons,omitempty"`
+	Reproduces   string   `json:"reproduces"` // re-runs that again differed from the engine / re-runs made
+	Diffs        []string `json:"diffs"`
+	Schedule     string   `json:"schedule"`
 }
 
 // Corpus describes what was run.
@@ -248,7 +257,7 @@ func BuildReport(pgVersion string, canned []Case, cannedEvals []*Eval, randCases
 			} else {
 				t.Unexplained++
 				r.Unexplained = append(r.Unexplained, Unexplained{
-					Case: e.Case, Level: string(lv), Signature: sig, Diffs: e.Diffs,
+					Case: e.Case, Level: string(lv), Signature: sig, Hints: e.Hints, Shrunk: e.Shrunk, EngineAborts: fmtAborts(e.Engine.SystemAborts()), PGAborts: fmtAborts(e.PG.SystemAborts()), PGReasons: PGAbortReasons(e), Reproduces: fmt.Sprintf("%d of %d re-runs differed", len(e.Rerun)-e.RerunMatches, len(e.Rerun)), Diffs: e.Diffs,
 					Schedule: ScheduleText(byName[e.Case].SC),
 				})
 			}
@@ -460,4 +469,82 @@ func MergeReports(rs []*Report) (*Report, error) {
 		out.Canned = append(out.Canned, *byScenario[s])
 	}
 	return &out, nil
+}
+
+// HintLegend explains the hints shown next to an unexplained Serializable mismatch.
+const HintLegend = "Hints are control experiments run on the minimal schedule: `page-locks` = filler rows between the keys made PostgreSQL abort a transaction the engine aborted (divergence ser-different-victim); `no-writes-in-edge` = adding one write to a read-only transaction did (ser-no-writes-in-edge); `error-deferred-to-commit` = turning that transaction's ABORT into a COMMIT made PostgreSQL abort it too (ser-error-deferred-to-commit); `in-transaction-rolled-back` = every engine-only abort is a pivot whose in-edge transaction rolls back, with no control that explains PostgreSQL's side (ser-pivot-before-in-ends, cause not yet established). No hint means none of these applies: investigate (go run ./cmd/azoo-conformance -debug seed-N -level SER, -hint-detail, -shrink, -controls; docs/METHODOLOGY.md)."
+
+// Summary renders the report as GitHub-flavoured markdown for a job summary: totals per level, the
+// divergences seen, and, for every unexplained mismatch, what is needed to start classifying it.
+func (r *Report) Summary() string {
+	var b strings.Builder
+	verdict := "PASS"
+	if w := r.Failing(); w != "" {
+		verdict = "FAIL: " + w
+	}
+	fmt.Fprintf(&b, "## Conformance: engine %s vs PostgreSQL %s\n\n**%s**. %d random schedules per level (seeds %d to %d, no DELETE).\n\n", r.EngineVersion, r.PostgresVersion, verdict, r.Corpus.RandomPerLevel, r.Corpus.SeedBase, r.Corpus.SeedBase+uint64(r.Corpus.RandomPerLevel)-1)
+	b.WriteString("| Level | Schedules | Compared | Identical | Mismatches | Explained | Unexplained |\n|---|---|---|---|---|---|---|\n")
+	for _, lv := range Levels {
+		t, ok := r.Random[string(lv)]
+		if !ok {
+			continue
+		}
+		fmt.Fprintf(&b, "| %s | %d | %d | %d (%s) | %d | %d | %d |\n", lv, t.Schedules, t.Compared, t.Identical, pct(t.Identical, t.Compared), t.Mismatches, t.Explained, t.Unexplained)
+	}
+	if t, ok := r.Random["SER"]; ok {
+		fmt.Fprintf(&b, "\nSerializable: engine %d/%d and PostgreSQL %d/%d histories serializable; same abort set %d (%s); engine aborts more %d, fewer %d, same count %d; fewer-but-not-serializable %d.\n", t.EngineSerializable, t.Schedules, t.PGSerializable, t.Schedules, t.AbortSetsIdentical, pct(t.AbortSetsIdentical, t.Schedules), t.EngineAbortsMore, t.EngineAbortsFewer, t.AbortsDifferSame, t.FewerNotSerial)
+	}
+	b.WriteString("\n### Known divergences seen\n\n| Divergence | Cause | Schedules (by level) |\n|---|---|---|\n")
+	for _, d := range r.KnownDivergences {
+		cause := "established"
+		if !d.Established {
+			cause = "not yet established"
+		}
+		var occ []string
+		lvls := make([]string, 0, len(d.Occurrences))
+		for lv := range d.Occurrences {
+			lvls = append(lvls, lv)
+		}
+		sort.Strings(lvls)
+		for _, lv := range lvls {
+			occ = append(occ, fmt.Sprintf("%s %d", lv, d.Occurrences[lv]))
+		}
+		if len(occ) == 0 {
+			occ = []string{"none"}
+		}
+		fmt.Fprintf(&b, "| %s | %s | %s |\n", d.ID, cause, strings.Join(occ, ", "))
+	}
+	if len(r.Unexplained) > 0 {
+		fmt.Fprintf(&b, "\n### Unexplained mismatches (%d)\n\n| Seed | Level | Hints | Engine aborts | PostgreSQL aborts | PostgreSQL's reason | Reproduces |\n|---|---|---|---|---|---|---|\n", len(r.Unexplained))
+		for _, u := range r.Unexplained {
+			reason := ""
+			if len(u.PGReasons) > 0 {
+				reason = strings.ReplaceAll(u.PGReasons[0], "|", "/")
+				if len(reason) > 110 {
+					reason = reason[:110] + "..."
+				}
+			}
+			hints := strings.Join(u.Hints, ", ")
+			if hints == "" {
+				hints = "none"
+			}
+			fmt.Fprintf(&b, "| %s | %s | %s | %s | %s | %s | %s |\n", u.Case, u.Level, hints, u.EngineAborts, u.PGAborts, reason, u.Reproduces)
+		}
+		b.WriteString("\n" + HintLegend + "\n")
+		shown := 0
+		for _, u := range r.Unexplained {
+			if shown == 12 {
+				fmt.Fprintf(&b, "\n(%d more in the uploaded report.)\n", len(r.Unexplained)-shown)
+				break
+			}
+			shown++
+			sched := u.Shrunk
+			label := "minimal schedule"
+			if sched == "" {
+				sched, label = u.Schedule, "schedule"
+			}
+			fmt.Fprintf(&b, "\n<details><summary>%s %s: %s</summary>\n\n```\n%s```\n\n%s\n</details>\n", u.Case, u.Level, label, strings.TrimLeft(sched, "\n"), "Differences on the full schedule: "+strings.Join(u.Diffs, "; "))
+		}
+	}
+	return b.String()
 }
