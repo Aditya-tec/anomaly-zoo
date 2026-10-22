@@ -55,7 +55,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 // ---- habitat map (the site has a single dark theme over its background clip) ----
 {
-  const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 }, deviceScaleFactor: 2, reducedMotion: "reduce" });
+  const ctx = await browser.newContext({ viewport: { width: 1280, height: 2000 }, deviceScaleFactor: 2, reducedMotion: "reduce" });
   const page = await ctx.newPage();
   await page.goto(BASE + "/");
   await page.getByTestId("habitat-map").waitFor();
