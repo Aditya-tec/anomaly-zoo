@@ -244,22 +244,24 @@ select.btn option { background: var(--surface); color: var(--fg); }
 /* ---------- habitat map ---------- */
 .map-cell {
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  justify-content: center;
-  gap: 0.15rem;
-  min-height: 3.25rem;
-  padding: 0.5rem 0.9rem;
-  border: 1px solid var(--rim);
-  border-left: 4px solid var(--tone);
-  border-radius: 1rem;
-  background: rgb(0 0 0 / 0.5);
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 2.75rem;
+  padding: 0.4rem 0.9rem;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: none;
   color: var(--fg);
   text-decoration: none;
   position: relative;
   transition: background-color 150ms ease, border-color 150ms ease;
 }
-.map-cell:hover, .map-cell:focus-visible { background: rgb(255 255 255 / 0.12); border-color: rgb(255 255 255 / 0.45); border-left-color: var(--tone); }
+.map-cell:hover, .map-cell:focus-visible { background: rgb(255 255 255 / 0.07); border-color: var(--rim); }
+/* A hairline between rows is the only structure the map needs. */
+[data-testid="habitat-map"] tbody tr + tr > * { border-top: 1px solid rgb(255 255 255 / 0.1); }
+[data-testid="habitat-map"] tbody tr:first-child > * { border-top: 1px solid rgb(255 255 255 / 0.1); }
+/* Phone cards keep a small framed tile, because each one also carries the level code and the mechanism. */
+.map-card .map-cell { flex-direction: column; align-items: flex-start; justify-content: center; gap: 0.15rem; border-color: var(--rim); border-radius: 1rem; background: rgb(0 0 0 / 0.4); }
 .map-cell .mech {
   display: none;
   position: absolute;

@@ -10,15 +10,15 @@ export function HabitatMap({ data }: { data: HomeData }) {
   return (
     <>
       <div className="hidden sm:block">
-        <table className="w-full border-separate border-spacing-y-2 text-left" data-testid="habitat-map">
+        <table className="w-full border-collapse text-left" data-testid="habitat-map">
           <caption className="sr-only">Habitat map: each concurrency bug against each isolation level. Choose a cell to replay that run.</caption>
           <thead>
             <tr>
-              <th scope="col" className="px-2 pb-1 text-sm font-semibold text-muted">
+              <th scope="col" className="pb-2 text-xs font-medium uppercase tracking-widest text-muted">
                 Anomaly
               </th>
               {LEVELS.map((lv) => (
-                <th key={lv} scope="col" className="px-2 pb-1 text-sm font-semibold text-muted">
+                <th key={lv} scope="col" className="px-3 pb-2 text-xs font-medium uppercase tracking-widest text-muted">
                   <abbr title={LEVEL_NAMES[lv]} className="no-underline">
                     {lv}
                   </abbr>
@@ -30,14 +30,14 @@ export function HabitatMap({ data }: { data: HomeData }) {
           <tbody>
             {data.rows.map((row, i) => (
               <tr key={row.id}>
-                <th scope="row" className="pr-3 align-middle font-semibold">
+                <th scope="row" className="py-3 pr-3 align-middle font-medium">
                   <span className="eyebrow mb-0.5 block">No. {String(i + 1).padStart(2, "0")}</span>
                   <a href={`/anomalies/${row.id}`} className="inline-flex min-h-11 items-center text-fg">
                     {row.name}
                   </a>
                 </th>
                 {row.cells.map((c) => (
-                  <td key={c.level} className="align-middle">
+                  <td key={c.level} className="py-2 align-middle">
                     <a
                       href={c.href}
                      
