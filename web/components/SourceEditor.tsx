@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, type RefObject } from "react";
+import { useEffect, useRef, useState, type RefObject } from "react";
 
 interface Props {
   value: string;
@@ -20,10 +20,15 @@ const MAX_NUMBERED_LINES = 2000;
 // the gutter text is never part of the document the visitor edits or copies.
 export function SourceEditor({ value, onChange, onRun, onIntent, invalid, describedBy, textareaRef }: Props) {
   const gutter = useRef<HTMLDivElement>(null);
+  // The server-rendered textarea is editable before React hydrates, and hydration resets it to the
+  // state's value, which silently discards anything typed in that window. So it is read-only until
+  // hydrated, and `data-hydrated` tells tests (and anyone else) when it is ready.
+  const [hydrated, setHydrated] = useState(false);
+  useEffect(() => setHydrated(true), []);
   const lineCount = Math.min(value.split("\n").length, MAX_NUMBERED_LINES);
 
   return (
-    <div className="editor" data-testid="editor">
+    <div className="editor" data-testid="editor" data-hydrated={hydrated ? "true" : "false"}>
       <div className="editor-gutter" ref={gutter} aria-hidden="true" data-testid="editor-gutter" data-lines={lineCount}>
         {Array.from({ length: lineCount }, (_, i) => (
           <span key={i} />
@@ -40,6 +45,7 @@ export function SourceEditor({ value, onChange, onRun, onIntent, invalid, descri
         autoCapitalize="off"
         autoComplete="off"
         autoCorrect="off"
+        readOnly={!hydrated}
         aria-invalid={invalid}
         aria-describedby={describedBy}
         onChange={(e) => onChange(e.target.value)}
