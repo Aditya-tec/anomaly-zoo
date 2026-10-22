@@ -229,19 +229,18 @@ test.describe("claims policy (P8: PostgreSQL appears only where measured data is
 });
 
 test.describe("theme toggle", () => {
-  test("cycles system, light, dark, remembers the choice, and works without localStorage", async ({ page, context }) => {
+  test("switches phosphor and paper, remembers the choice, and works without localStorage", async ({ page, context }) => {
     const w = await watchPage(page);
     await page.goto("/");
     const toggle = page.getByTestId("theme-toggle");
-    await expect(toggle).toHaveText("Theme: System");
+    await expect(toggle).toHaveText("Theme: Phosphor");
+    await expect(page.locator("html")).not.toHaveAttribute("data-theme", /.+/);
     await toggle.click();
-    await expect(toggle).toHaveText("Theme: Light");
+    await expect(toggle).toHaveText("Theme: Paper");
     await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
-    await toggle.click();
-    await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
     await page.reload();
-    await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
-    await expect(page.getByTestId("theme-toggle")).toHaveText("Theme: Dark");
+    await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+    await expect(page.getByTestId("theme-toggle")).toHaveText("Theme: Paper");
     await page.getByTestId("theme-toggle").click();
     await expect(page.locator("html")).not.toHaveAttribute("data-theme", /.+/);
     await expectClean(page, w);

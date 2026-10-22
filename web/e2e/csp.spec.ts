@@ -146,11 +146,12 @@ test("the site cannot be framed by another page (with a control that proves the 
     delete headers["content-security-policy"];
     await route.fulfill({ response: res, headers });
   });
-  expect(await framed()).toContain("About Anomaly Zoo");
+  // innerText follows text-transform, and headings are set in capitals, so match case-insensitively.
+  expect(await framed()).toMatch(/about anomaly zoo/i);
   await page.unroute("**/about");
 
   // Real headers: nothing of the site appears in the frame.
   const text = await framed();
-  expect(text).not.toContain("About Anomaly Zoo");
-  expect(text).not.toContain("Privacy");
+  expect(text).not.toMatch(/about anomaly zoo/i);
+  expect(text).not.toMatch(/privacy/i);
 });

@@ -23,9 +23,9 @@ function blockAfter(selector: string): string {
   throw new Error("unbalanced braces");
 }
 
-const light = vars(blockAfter(":root {"));
-const darkMedia = vars(blockAfter(':root:not([data-theme="light"]) {'));
-const darkManual = vars(blockAfter(':root[data-theme="dark"] {'));
+// Phosphor (dark) is the default theme; "paper" (data-theme="light") is the opt-in variant.
+const phosphor = vars(blockAfter(":root {"));
+const paper = vars(blockAfter(':root[data-theme="light"] {'));
 
 function lum(hex: string): number {
   const c = [1, 3, 5].map((i) => {
@@ -39,13 +39,14 @@ function ratio(a: string, b: string): number {
   return (hi! + 0.05) / (lo! + 0.05);
 }
 
-const themes = { light, dark: darkManual };
+const themes = { phosphor, paper };
 const surfaces = ["bg", "surface", "surface-2"];
 
 describe("theme tokens", () => {
-  it("the dark theme is defined identically for prefers-color-scheme and for the manual toggle", () => {
-    expect(darkMedia).toEqual(darkManual);
-    expect(Object.keys(darkManual).length).toBeGreaterThan(15);
+  it("both themes define the same tokens, and phosphor does not depend on prefers-color-scheme", () => {
+    expect(Object.keys(paper).sort()).toEqual(Object.keys(phosphor).sort());
+    expect(Object.keys(phosphor).length).toBeGreaterThan(15);
+    expect(css).not.toMatch(/prefers-color-scheme/);
   });
 
   for (const [name, t] of Object.entries(themes)) {
