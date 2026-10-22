@@ -80,7 +80,7 @@ export default function AboutPage() {
           Privacy
         </h2>
         <p className="m-0">
-          No cookies, no analytics, no third-party requests, no fingerprinting. If you use the theme button, your choice is kept in your browser&apos;s local storage; nothing is sent anywhere.
+          No cookies, no analytics, no third-party requests, no fingerprinting.
         </p>
       </section>
 

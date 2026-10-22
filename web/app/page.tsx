@@ -13,34 +13,29 @@ export const metadata: Metadata = pageMetadata({
   path: "/",
 });
 
-// Calvin S figlet face, 33 columns wide so it fits a phone.
-const ASCII_LOGO = [
-  "┌─┐┌┐┌┌─┐┌┬┐┌─┐┬  ┬ ┬   ┌─┐┌─┐┌─┐",
-  "├─┤││││ │││││├─┤│  └┬┘   ┌─┘│ ││ │",
-  "┴ ┴┘└┘└─┘┴ ┴┴ ┴┴─┘ ┴    └─┘└─┘└─┘",
-].join("\n");
-
 export default function Home() {
   const data = buildHomeData(loadManifest());
   return (
-    <main id="main" tabIndex={-1} className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
-      <section aria-labelledby="hero-h" className="max-w-3xl">
-        <pre className="ascii" aria-hidden="true">
-          {ASCII_LOGO}
-        </pre>
-        <p className="prompt mb-3" aria-hidden="true">
-          <span className="ps">visitor@zoo:~$</span> <span className="typing">azoo matrix scenarios</span>
-        </p>
-        <p className="eyebrow m-0 mb-2">An interactive museum of database concurrency bugs</p>
-        <h1 id="hero-h" className="cursor m-0">
-          {TAGLINE}
+    <main id="main" tabIndex={-1} className="relative z-10 mx-auto max-w-6xl px-4 py-8 sm:px-6">
+      <section aria-labelledby="hero-h" className="flex min-h-[min(60vh,34rem)] flex-col items-center justify-center py-10 text-center">
+        <p className="eyebrow m-0 mb-4">An interactive museum of database concurrency bugs</p>
+        <h1 id="hero-h" className="m-0 mb-4 max-w-4xl">
+          Watch database isolation bugs happen. Then turn them <em>off.</em>
         </h1>
-        <p className="mt-4 mb-0">
+        <p className="aura mt-0 mb-10 max-w-2xl text-sm leading-relaxed text-white/80 sm:text-base">
           A from-scratch transactional engine runs scripted schedules of two or three transactions at four isolation levels. Step through a schedule, watch a bug happen, flip the isolation level, and see the mechanism that prevents it.
         </p>
+        <div className="liquid-glass flex w-full max-w-xl items-center justify-between gap-3 rounded-full py-1.5 pr-1.5 pl-6 text-left">
+          <p className="m-0 text-sm text-muted">
+            {data.rows.length} bugs, 4 isolation levels
+          </p>
+          <a href="#map-h" className="btn btn-primary no-underline">
+            Explore the map
+          </a>
+        </div>
       </section>
 
-      <section aria-labelledby="map-h" className="mt-10">
+      <section aria-labelledby="map-h" className="mt-10 scroll-mt-6">
         <h2 id="map-h" className="m-0 mb-1">
           Habitat map
         </h2>
