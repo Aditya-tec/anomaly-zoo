@@ -41,6 +41,7 @@ export function policy(hashes) {
     "style-src 'self'",
     "img-src 'self' data:",
     "font-src 'self'",
+    "media-src 'self'",
     "connect-src 'self'",
     "worker-src 'self'",
     "manifest-src 'self'",
