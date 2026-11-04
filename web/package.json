@@ -35,7 +35,7 @@
     "chrome-launcher": "1.2.2",
     "eslint": "10.13.0",
     "eslint-plugin-react-hooks": "7.1.1",
-    "lighthouse": "13.5.0",
+    "lighthouse": "13.6.0",
     "postcss": "8.5.29",
     "tailwindcss": "4.3.3",
     "typescript": "5.9.3",
